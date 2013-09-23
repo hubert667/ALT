@@ -58,7 +58,7 @@ def lexical_probabilities(phrase_pair_freqs,l1_word_given_l2,l2_word_given_l1,al
         words_l1= phrase_pair[0].split()
         words_l2= phrase_pair[1].split()
         aligns=alignments[phrase_pair]
-        result=1
+        result1=1
         for word1 in words_l1:
             sumOf=0
             iterations=0
@@ -67,9 +67,19 @@ def lexical_probabilities(phrase_pair_freqs,l1_word_given_l2,l2_word_given_l1,al
                 if pair in aligns:
                     sumOf+=l1_word_given_l2[pair]
                     iterations+=1
-            result*=sumOf/iterations
-        l1_lexical_given_l2[phrase_pair]=result    
-        l2_lexical_given_l1[phrase_pair]=result            
+            result1*=sumOf/iterations
+        result2=1
+        for word2 in words_l2:
+            sumOf=0
+            iterations=0
+            for word1 in words_l1:
+                pair=word1,word2
+                if pair in aligns:
+                    sumOf+=l2_word_given_l1[pair]
+                    iterations+=1
+            result2*=sumOf/iterations
+        l1_lexical_given_l2[phrase_pair]=result1    
+        l2_lexical_given_l1[phrase_pair]=result2           
         #phrase_probs[phrase_pair] = float(freq) / freq_sum
 
     return l1_lexical_given_l2,l2_lexical_given_l1
@@ -136,6 +146,9 @@ def extract_phrase_pair_freqs(alignments_file, language1_file,
     phrase_pair_freqs = Counter()
     l1_phrase_freqs = Counter()
     l2_phrase_freqs = Counter()
+    words_pair_freqs = Counter()
+    l1_words_freqs = Counter()
+    l2_words_freqs = Counter()
     num_lines = number_of_lines(alignments_file)
     alignments = open(alignments_file, 'r')
     language1 = open(language1_file, 'r')
@@ -150,22 +163,27 @@ def extract_phrase_pair_freqs(alignments_file, language1_file,
         l2 = language2.next()
         #print str_align, l1, l2
         align = str_to_alignments(str_align)
+        alignCopy = str_to_alignments(str_align)
         words_aligns=create_word_align(align,l1,l2)
         phrase_alignments = extract_alignments(align, len(l1.split()),
-                len(l2.split()),
-                                               max_length)
+                len(l2.split()), max_length)
         
         for phrase_pair in extract_phrase_pairs_gen(phrase_alignments, l1, l2):
             phrase_pair_freqs[phrase_pair] += 1
             l1_phrase_freqs[phrase_pair[0]] += 1
             l2_phrase_freqs[phrase_pair[1]] += 1
             alignments_for_phrases[phrase_pair]=words_aligns;
+            
+        for phrase_pair in extract_words_pairs_gen(alignCopy, l1, l2):
+            words_pair_freqs[phrase_pair] += 1
+            l1_words_freqs[phrase_pair[0]] += 1
+            l2_words_freqs[phrase_pair[1]] += 1
 
     alignments.close()
     language1.close()
     language2.close()
     sys.stdout.write('\n')
-    return phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,alignments_for_phrases
+    return phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,alignments_for_phrases, words_pair_freqs, l1_words_freqs, l2_words_freqs
 
 def extract_words_pair_freqs(alignments_file, language1_file,
                               language2_file, 
@@ -201,7 +219,7 @@ def extract_words_pair_freqs(alignments_file, language1_file,
         align = str_to_alignments(str_align)
         
         for phrase_pair in extract_words_pairs_gen(align, l1, l2):
-            if 'phrase_pair' in words_pair_freqs:
+            if phrase_pair in words_pair_freqs:
                 words_pair_freqs[phrase_pair] += 1
             else:
                 words_pair_freqs[phrase_pair] =1;
@@ -504,9 +522,7 @@ def main():
 
     
     freqs = extract_phrase_pair_freqs(alignments, language1, language2, max_length)
-    words_freqs= extract_words_pair_freqs(alignments, language1, language2, max_length)
-    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments = freqs
-    words_pair_freqs, l1_words_freqs, l2_words_freqs = words_freqs
+    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqs
     l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs)
     l1_word_given_l2, l2_word_given_l1 = conditional_probabilities(words_pair_freqs, 
