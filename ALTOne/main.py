@@ -67,7 +67,10 @@ def lexical_probabilities(phrase_pair_freqs,l1_word_given_l2,l2_word_given_l1,al
                 if pair in aligns:
                     sumOf+=l1_word_given_l2[pair]
                     iterations+=1
-            result1*=sumOf/iterations
+            if iterations!=0:
+                result1*=sumOf/iterations
+            else:
+                result1=0
         result2=1
         for word2 in words_l2:
             sumOf=0
@@ -77,7 +80,10 @@ def lexical_probabilities(phrase_pair_freqs,l1_word_given_l2,l2_word_given_l1,al
                 if pair in aligns:
                     sumOf+=l2_word_given_l1[pair]
                     iterations+=1
-            result2*=sumOf/iterations
+            if iterations!=0:
+                result2*=sumOf/iterations
+            else:
+                result2=0
         l1_lexical_given_l2[phrase_pair]=result1    
         l2_lexical_given_l1[phrase_pair]=result2           
         #phrase_probs[phrase_pair] = float(freq) / freq_sum
@@ -514,11 +520,14 @@ def main():
     output_name = args.output
     max_length = int(args.max_length)
     """
-    alignments="alignments"
-    language1="language1"
-    language2="language2"
+   # alignments="alignments"
+   # language1="language1"
+   # language2="language2"
+    alignments="clean.aligned"
+    language1="clean.nl"
+    language2="clean.en"
     output_name="output"
-    max_length=5
+    max_length=7
 
     
     freqs = extract_phrase_pair_freqs(alignments, language1, language2, max_length)
