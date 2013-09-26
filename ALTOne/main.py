@@ -498,7 +498,7 @@ def main():
     - maximum length of a phrase pair
     """
     
-    """
+    
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-a", "--alignments",
         help="File containing alignments")
@@ -506,18 +506,15 @@ def main():
         help="File containing sentences of language 1")
     arg_parser.add_argument("-l2", "--language2",
         help="File containing sentences of language 2")
-    """
+    arg_parser.add_argument("-o", "--output",
+        help="Output file")
     
-    """
-    #args = arg_parser.parse_args()
+    args = arg_parser.parse_args()
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
-    output_name = args.output
-    """
-    alignments="alignments"
-    language1="language1"
-    language2="language2"
+    
+
     #alignments="clean.aligned"
     #language1="clean.nl"
     #language2="clean.en"
