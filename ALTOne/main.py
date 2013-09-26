@@ -1,7 +1,7 @@
 # phrase pair extractor
 
 """
-By Michael Cabot (6047262) and Sander Nugteren (6042023)
+By Hubert Szostek (10656804) and Sander Nugteren (6042023)
 """
 
 import argparse
@@ -22,8 +22,8 @@ def conditional_probabilities(phrase_pair_freqs,
     l1_given_l2 = {}
     l2_given_l1 = {}
     for phrase_pair, freq in phrase_pair_freqs.iteritems():
-        l1_given_l2[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[0]]
-        l2_given_l1[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[1]]
+        l1_given_l2[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
+        l2_given_l1[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
 
     return l1_given_l2, l2_given_l1
 
@@ -513,12 +513,12 @@ def main():
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
-    
+    output_name=args.output;
 
-    #alignments="clean.aligned"
-    #language1="clean.nl"
-    #language2="clean.en"
-    output_name="output"
+    #alignments="alignments"
+    #language1="language1"
+    #language2="language2"
+    #output_name="output"
     max_length=7
 
     
