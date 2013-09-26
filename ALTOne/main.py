@@ -22,8 +22,8 @@ def conditional_probabilities(phrase_pair_freqs,
     l1_given_l2 = {}
     l2_given_l1 = {}
     for phrase_pair, freq in phrase_pair_freqs.iteritems():
-        l1_given_l2[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
-        l2_given_l1[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
+        l1_given_l2[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[0]]
+        l2_given_l1[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[1]]
 
     return l1_given_l2, l2_given_l1
 
