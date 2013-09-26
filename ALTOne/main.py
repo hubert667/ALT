@@ -8,6 +8,23 @@ By Michael Cabot (6047262) and Sander Nugteren (6042023)
 from collections import Counter
 import sys
 
+def reordering_probabilities(phrase_pair_reordering_freqs):
+    """Calculates reorderings probabilities based on frequency of jumps
+    
+    Keywords arguments:
+    phrase_pair_reordering_freqs- dictionary with key: phrase pair and value: tuple of 8 values of frequency of jumps
+    """
+    phrase_pair_probabilities=dict
+    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+        sum_of_prob=0;
+        probabilities=list
+        for i in len(freqs):
+            sum_of_prob+=freqs[i]
+        for i in len(freqs):
+            probabilities.append(freqs[i]/sum_of_prob)
+        phrase_pair_probabilities[phrase_pair]=probabilities;
+    return phrase_pair_probabilities
+
 def conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs):
     """Calculate the conditional probability of phrase pairs in both directions.
