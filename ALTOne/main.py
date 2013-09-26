@@ -1,14 +1,12 @@
 # phrase pair extractor
 
 """
-By Hubert Szostek (10656804) and Sander Nugteren (6042023)
+By Michael Cabot (6047262) and Sander Nugteren (6042023)
 """
 
-import argparse
+#import argparse
 from collections import Counter
 import sys
-
-
 
 def conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs):
@@ -24,8 +22,8 @@ def conditional_probabilities(phrase_pair_freqs,
     l1_given_l2 = {}
     l2_given_l1 = {}
     for phrase_pair, freq in phrase_pair_freqs.iteritems():
-        l1_given_l2[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
-        l2_given_l1[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
+        l1_given_l2[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
+        l2_given_l1[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
 
     return l1_given_l2, l2_given_l1
 
@@ -182,10 +180,10 @@ def extract_phrase_pair_freqs(alignments_file, language1_file,
             l2_phrase_freqs[phrase_pair[1]] += 1
             alignments_for_phrases[phrase_pair]=words_aligns;
             
-        for words_pair in extract_words_pairs_gen(alignCopy, l1, l2):
-            words_pair_freqs[words_pair] += 1
-            l1_words_freqs[words_pair[0]] += 1
-            l2_words_freqs[words_pair[1]] += 1
+        for phrase_pair in extract_words_pairs_gen(alignCopy, l1, l2):
+            words_pair_freqs[phrase_pair] += 1
+            l1_words_freqs[phrase_pair[0]] += 1
+            l2_words_freqs[phrase_pair[1]] += 1
 
     alignments.close()
     language1.close()
@@ -471,7 +469,7 @@ def phrase_pairs_to_file(file_name,l1_given_l2, l2_given_l1, l1_lexical_given_l2
     """
     out = open(file_name, 'w')
     for pair in phrase_pair_freqs:
-        out.write('%s ||| %s ||| %s %s %s %s ||| %s %s %s)\n' % (pair[0],pair[1], l1_given_l2[pair], l2_given_l1[pair], l1_lexical_given_l2[pair],l2_lexical_given_l1[pair],l1_phrase_freqs[pair[0]], l2_phrase_freqs[pair[1]], phrase_pair_freqs[pair]))
+        out.write('(%s, %s, %s, %s,%s, %s, %s, %s)\n' % (pair, l1_given_l2[pair], l2_given_l1[pair], l1_lexical_given_l2[pair],l2_lexical_given_l1[pair],l1_phrase_freqs[pair[0]], l2_phrase_freqs[pair[1]], phrase_pair_freqs[pair]))
 
     out.close()
 
@@ -500,7 +498,7 @@ def main():
     - maximum length of a phrase pair
     """
     
-    
+    """
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-a", "--alignments",
         help="File containing alignments")
@@ -509,18 +507,26 @@ def main():
     arg_parser.add_argument("-l2", "--language2",
         help="File containing sentences of language 2")
     arg_parser.add_argument("-o", "--output",
-        help="Output file")
+        help="File name of output")
+    arg_parser.add_argument("-m", "--max_length",
+        help="Maximum length of phrase pairs")
+    """
     
-    args = arg_parser.parse_args()
+    """
+    #args = arg_parser.parse_args()
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
-    output_name=args.output;
-
-    #alignments="alignments"
-    #language1="language1"
-    #language2="language2"
-    #output_name="output"
+    output_name = args.output
+    max_length = int(args.max_length)
+    """
+    alignments="alignments"
+    language1="language1"
+    language2="language2"
+    #alignments="clean.aligned"
+    #language1="clean.nl"
+    #language2="clean.en"
+    output_name="output"
     max_length=7
 
     
