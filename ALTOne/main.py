@@ -8,6 +8,8 @@ import argparse
 from collections import Counter
 import sys
 
+
+
 def conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs):
     """Calculate  the conditional probability of phrase pairs in both directions.
