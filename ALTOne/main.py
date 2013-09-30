@@ -48,7 +48,7 @@ def conditional_probabilities(phrase_pair_freqs,
     """Calculate  the conditional probability of phrase pairs in both directions.
     
     Keyword arguments:
-    phrase_pair_freqs -- counter of phrase pairs
+    phrase_pair_freqs -- counter of phrase  
     l1_phrase_freqs -- counter of phrases in language 1
     l2_phraes_freqs -- counter of phrases in lanuage 2
     
