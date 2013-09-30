@@ -1,10 +1,10 @@
 # phrase pair extractor
 
 """
-By Michael Cabot (6047262) and Sander Nugteren (6042023)
+By Hubert Szostek (10656804) and Sander Nugteren (6042023)
 """
 
-#import argparse
+import argparse
 from collections import Counter
 import sys
 
@@ -45,7 +45,7 @@ def histogram_of_orientation(phrase_pair_reordering_freqs):
 
 def conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs):
-    """Calculate the conditional probability of phrase pairs in both directions.
+    """Calculate  the conditional probability of phrase pairs in both directions.
     
     Keyword arguments:
     phrase_pair_freqs -- counter of phrase pairs
@@ -57,8 +57,8 @@ def conditional_probabilities(phrase_pair_freqs,
     l1_given_l2 = {}
     l2_given_l1 = {}
     for phrase_pair, freq in phrase_pair_freqs.iteritems():
-        l1_given_l2[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
-        l2_given_l1[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
+        l1_given_l2[phrase_pair] = float(freq) / l2_phrase_freqs[phrase_pair[1]]
+        l2_given_l1[phrase_pair] = float(freq) / l1_phrase_freqs[phrase_pair[0]]
 
     return l1_given_l2, l2_given_l1
 
@@ -215,16 +215,113 @@ def extract_phrase_pair_freqs(alignments_file, language1_file,
             l2_phrase_freqs[phrase_pair[1]] += 1
             alignments_for_phrases[phrase_pair]=words_aligns;
             
-        for phrase_pair in extract_words_pairs_gen(alignCopy, l1, l2):
-            words_pair_freqs[phrase_pair] += 1
-            l1_words_freqs[phrase_pair[0]] += 1
-            l2_words_freqs[phrase_pair[1]] += 1
+        for words_pair in extract_words_pairs_gen(alignCopy, l1, l2):
+            words_pair_freqs[words_pair] += 1
+            l1_words_freqs[words_pair[0]] += 1
+            l2_words_freqs[words_pair[1]] += 1
 
     alignments.close()
     language1.close()
     language2.close()
     sys.stdout.write('\n')
     return phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,alignments_for_phrases, words_pair_freqs, l1_words_freqs, l2_words_freqs
+
+def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
+                              language2_file, phrase_lvl=True, 
+                              max_length = float('inf')):
+    """Extract and count the frequency of all phrase pairs given an
+    alignment between sentences.
+    
+    Keyword arguments:
+    alignments_file -- file that contains the alignments
+    language1_file -- file containing sentences from language 1
+    language2_file -- file containing sentences from language 2
+    max_length -- maximum length of phrase pairs
+    
+    Returns counter of phrase-pairs, counter of phrases in language1
+            and counter of phrases in language2
+    """
+    num_lines = number_of_lines(alignments_file)
+    alignments = open(alignments_file, 'r')
+    language1 = open(language1_file, 'r')
+    language2 = open(language2_file, 'r')
+    corpus_dict = {} 
+    
+    for i, str_align in enumerate(alignments):
+        if num_lines>100:
+            if  i % (num_lines/100) is 0:
+                sys.stdout.write('\r%d%%' % (i*100/num_lines,))
+                sys.stdout.flush()
+        l1 = language1.next()
+        l2 = language2.next()
+        #print str_align, l1, l2
+        align = str_to_alignments(str_align)
+        alignCopy = str_to_alignments(str_align)
+        words_aligns=create_word_align(align,l1,l2)
+        phrase_alignments = extract_alignments(align, len(l1.split()),
+                len(l2.split()), max_length)
+        
+        if phrase_lvl:
+            sentence_dict = {}
+            while phrase_alignments:
+                phrase = phrase_alignments.pop()
+                if phrase not in sentence_dict:
+                    #counts for a particular phrase have the form:
+                    #[lrm, lrs, lrdl, lrdr, rlm, rls, rldl, rldr]
+                    #phrase_count = 8*[0]
+                    sentence_dict[phrase] = 8*[0]
+                for a in phrase_alignments:
+                    if a not in sentence_dict:
+                        sentence_dict[a] = 8*[0]
+                    if a[1] is phrase[3]+1:
+                        #Left to right jumps
+                        if a[0] is phrase[2]+1:
+                            #lr_monotone
+                            sentence_dict[phrase][0] +=1
+                            sentence_dict[a][4] +=1
+                        elif a[2] is phrase[0]-1:
+                            #lr_swap
+                            sentence_dict[phrase][1] +=1
+                            sentence_dict[a][5] +=1
+                        elif a[0] > phrase[2]:
+                            #lr_discontinuous_left
+                            sentence_dict[phrase][2] +=1
+                            sentence_dict[a][6] +=1
+                        elif a[0] < phrase[2]:
+                            #lr_discontinuous_right
+                            sentence_dict[phrase][3] +=1
+                            sentence_dict[a][7] +=1
+                    elif phrase[1] is a[3]+1:
+                        #right to left jumps
+                        if phrase[0] is a[2]+1:
+                            #rl_monotone
+                            sentence_dict[phrase][4] +=1
+                            sentence_dict[a][0] +=1
+                        elif phrase[2] is a[0]-1:
+                            #rl_swap
+                            sentence_dict[phrase][5] +=1
+                            sentence_dict[a][1] +=1
+                        elif phrase[0] > a[2]:
+                            #rl_discontinuous_left (???)
+                            sentence_dict[phrase][6] +=1
+                            sentence_dict[a][2] +=1
+                        elif phrase[0] < a[2]:
+                            #rl_discontinuous_right (???)
+                            sentence_dict[phrase][7] +=1
+                            sentence_dict[a][3] +=1
+            for phrase in sentence_dict:
+                phrase_tup = extract_phrase_pairs_gen([phrase], l1, l2).next()
+                if phrase_tup in corpus_dict:
+                    for x in xrange(len(sentence_dict[phrase])):
+                        corpus_dict[phrase_tup][x] += sentence_dict[phrase][x]
+                else:
+                    corpus_dict[phrase_tup] = sentence_dict[phrase]
+
+    alignments.close()
+    language1.close()
+    language2.close()
+    sys.stdout.write('\n')
+    return corpus_dict
 
 def extract_words_pair_freqs(alignments_file, language1_file,
                               language2_file, 
@@ -258,12 +355,12 @@ def extract_words_pair_freqs(alignments_file, language1_file,
         l2 = language2.next()
         #print str_align, l1, l2
         align = str_to_alignments(str_align)
-        
+
         for phrase_pair in extract_words_pairs_gen(align, l1, l2):
             if phrase_pair in words_pair_freqs:
                 words_pair_freqs[phrase_pair] += 1
             else:
-                words_pair_freqs[phrase_pair] =1;
+                words_pair_freqs[phrase_pair] = 1
                 
             if phrase_pair[0] in l1_words_freqs:
                 l1_words_freqs[phrase_pair[0]] += 1
@@ -504,7 +601,7 @@ def phrase_pairs_to_file(file_name,l1_given_l2, l2_given_l1, l1_lexical_given_l2
     """
     out = open(file_name, 'w')
     for pair in phrase_pair_freqs:
-        out.write('(%s, %s, %s, %s,%s, %s, %s, %s)\n' % (pair, l1_given_l2[pair], l2_given_l1[pair], l1_lexical_given_l2[pair],l2_lexical_given_l1[pair],l1_phrase_freqs[pair[0]], l2_phrase_freqs[pair[1]], phrase_pair_freqs[pair]))
+        out.write('%s ||| %s ||| %s %s %s %s ||| %s %s %s)\n' % (pair[0],pair[1], l1_given_l2[pair], l2_given_l1[pair], l1_lexical_given_l2[pair],l2_lexical_given_l1[pair],l1_phrase_freqs[pair[0]], l2_phrase_freqs[pair[1]], phrase_pair_freqs[pair]))
 
     out.close()
 
@@ -533,7 +630,7 @@ def main():
     - maximum length of a phrase pair
     """
     
-    """
+    
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-a", "--alignments",
         help="File containing alignments")
@@ -542,30 +639,28 @@ def main():
     arg_parser.add_argument("-l2", "--language2",
         help="File containing sentences of language 2")
     arg_parser.add_argument("-o", "--output",
-        help="File name of output")
-    arg_parser.add_argument("-m", "--max_length",
-        help="Maximum length of phrase pairs")
-    """
+        help="Output file")
     
-    """
-    #args = arg_parser.parse_args()
+    args = arg_parser.parse_args()
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
-    output_name = args.output
-    max_length = int(args.max_length)
-    """
+    output_name=args.output;
+
     alignments="alignments"
     language1="language1"
     language2="language2"
-    #alignments="clean.aligned"
-    #language1="clean.nl"
-    #language2="clean.en"
     output_name="output"
     max_length=7
 
-    
-    freqs = extract_phrase_pair_freqs(alignments, language1, language2, max_length)
+    freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2, max_length)
+    out = open(output_name, 'w')
+    for phrase in freqs:
+        for f in xrange(len(freqs[phrase])):
+            out.write(str(freqs[phrase][f]))
+            out.write(',')
+        out.write('\n')
+    '''
     phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqs
     l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs)
@@ -575,7 +670,7 @@ def main():
     #l2_phrase_probs = phrase_probabilities(l2_phrase_freqs)
     #joint_probs = joint_probabilities(l1_given_l2, l2_phrase_probs)
     phrase_pairs_to_file(output_name,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
-
+    '''
     
 if __name__ == '__main__':
     main()
