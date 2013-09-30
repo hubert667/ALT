@@ -8,6 +8,41 @@ import argparse
 from collections import Counter
 import sys
 
+def reordering_probabilities(phrase_pair_reordering_freqs):
+    """Calculates reordering probabilities based on frequency of jumps
+    
+    Keywords arguments:
+    phrase_pair_reordering_freqs- dictionary with key: phrase pair and value: tuple of 8 values of frequency of jumps
+    
+    Returns dictionary of reordering probabilities for every phrase phrase. Key: pair phrase, Value: list of 8 probabilities
+    """
+    phrase_pair_probabilities=dict
+    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+        sum_of_prob=0;
+        probabilities=list
+        for i in len(freqs):
+            sum_of_prob+=freqs[i]
+        for i in len(freqs):
+            probabilities.append(freqs[i]/sum_of_prob)
+        phrase_pair_probabilities[phrase_pair]=probabilities;
+    return phrase_pair_probabilities
+
+def histogram_of_orientation(phrase_pair_reordering_freqs):
+    """Calculates histogram of counts of orientations 
+    
+    Keywords arguments:
+    phrase_pair_reordering_freqs- dictionary with key: phrase pair and value: tuple of 8 values of frequency of jumps
+    
+    Returns 8 tuple of dictionaries which maps from frequency of some kind of jump to number of phrases which
+    """
+    reordering_histogram={Counter,Counter,Counter,Counter,Counter,Counter,Counter,Counter}
+    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+        for i in len(freqs):
+            number=freqs[i]
+            someCounter=reordering_histogram[i]
+            someCounter[number]+=1
+    return reordering_histogram
+
 def conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs):
     """Calculate  the conditional probability of phrase pairs in both directions.
