@@ -16,14 +16,16 @@ def reordering_probabilities(phrase_pair_reordering_freqs):
     
     Returns dictionary of reordering probabilities for every phrase phrase. Key: pair phrase, Value: list of 8 probabilities
     """
-    phrase_pair_probabilities=dict
-    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+    phrase_pair_probabilities={}
+    for phrase_pair in phrase_pair_reordering_freqs:
+        freqs=phrase_pair_reordering_freqs[phrase_pair]
         sum_of_prob=0;
-        probabilities=list
-        for i in len(freqs):
+        probabilities=8*[0.0]
+        for i in range(len(freqs)):
             sum_of_prob+=freqs[i]
-        for i in len(freqs):
-            probabilities.append(freqs[i]/sum_of_prob)
+        for i in range(len(freqs)):
+            if sum_of_prob!=0:
+                probabilities[i]=(float(freqs[i])/float(sum_of_prob))
         phrase_pair_probabilities[phrase_pair]=probabilities;
     return phrase_pair_probabilities
 
@@ -37,7 +39,7 @@ def histogram_of_orientation(phrase_pair_reordering_freqs):
     """
     reordering_histogram={Counter,Counter,Counter,Counter,Counter,Counter,Counter,Counter}
     for phrase_pair, freqs in phrase_pair_reordering_freqs:
-        for i in len(freqs):
+        for i in range(len(freqs)):
             number=freqs[i]
             someCounter=reordering_histogram[i]
             someCounter[number]+=1
@@ -238,8 +240,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
     language2_file -- file containing sentences from language 2
     max_length -- maximum length of phrase pairs
     
-    Returns counter of phrase-pairs, counter of phrases in language1
-            and counter of phrases in language2
+    Returns 
     """
     num_lines = number_of_lines(alignments_file)
     alignments = open(alignments_file, 'r')
@@ -604,6 +605,26 @@ def phrase_pairs_to_file(file_name,l1_given_l2, l2_given_l1, l1_lexical_given_l2
         out.write('%s ||| %s ||| %s %s %s %s ||| %s %s %s)\n' % (pair[0],pair[1], l1_given_l2[pair], l2_given_l1[pair], l1_lexical_given_l2[pair],l2_lexical_given_l1[pair],l1_phrase_freqs[pair[0]], l2_phrase_freqs[pair[1]], phrase_pair_freqs[pair]))
 
     out.close()
+    
+def reordering_to_file(file_name,probabilities):
+    """Write phrase pairs and their reordering probabilities to the file
+    
+    Keyword arguments:
+    file_name -- name of file for writing
+    probabilities -- list of phrase pairs
+    joint_probs -- dictionary mapping phrase pair to its joints probability
+    l1_given_l2 -- dictionary mapping phrase pair (l1,l2) to is conditional 
+                   probability P(l1 | l2)
+    l2_given_l1 -- dictionary mapping phrase pair (l1,l2) to is conditional 
+                   probability P(l2 | l1)
+    """
+    out = open(file_name, 'w')
+    for pair in probabilities:
+        val=probabilities[pair]
+        out.write('%s ||| %s ||| %s %s %s %s %s %s %s %s)\n' % (pair[0], pair[1], val[0],val[1],val[2],val[3],val[4],val[5],val[6],val[7]))
+
+    out.close()
+    
 
 def number_of_lines(file_name):
     """Counts the number of lines in a file
@@ -651,17 +672,21 @@ def main():
     language1="language1"
     language2="language2"
     output_name="output"
+    output_test="outputfreq"
+    old_output="oldOutput"
     max_length=7
 
+
     freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2, max_length)
-    out = open(output_name, 'w')
+    out = open(output_test, 'w')
     for phrase in freqs:
         for f in xrange(len(freqs[phrase])):
             out.write(str(freqs[phrase][f]))
             out.write(',')
         out.write('\n')
-    '''
-    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqs
+   
+    freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length)
+    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqsOld
     l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs)
     l1_word_given_l2, l2_word_given_l1 = conditional_probabilities(words_pair_freqs, 
@@ -669,8 +694,10 @@ def main():
     l1_lexical_given_l2,l2_lexical_given_l1= lexical_probabilities(phrase_pair_freqs,l1_word_given_l2,l2_word_given_l1,words_alignments)
     #l2_phrase_probs = phrase_probabilities(l2_phrase_freqs)
     #joint_probs = joint_probabilities(l1_given_l2, l2_phrase_probs)
-    phrase_pairs_to_file(output_name,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
-    '''
+    phrase_pairs_to_file(old_output,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
+    
+    probabilities=reordering_probabilities(freqs)
+    reordering_to_file(output_name,probabilities)
     
 if __name__ == '__main__':
     main()
