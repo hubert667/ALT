@@ -19,13 +19,17 @@ def reordering_probabilities(phrase_pair_reordering_freqs):
     phrase_pair_probabilities={}
     for phrase_pair in phrase_pair_reordering_freqs:
         freqs=phrase_pair_reordering_freqs[phrase_pair]
-        sum_of_prob=0;
+        sum_of_probLR=0
+        sum_of_probRL=0
         probabilities=8*[0.0]
+        for i in range(4):
+            sum_of_probLR+=freqs[i]
+            sum_of_probRL+=freqs[i+4]
         for i in range(len(freqs)):
-            sum_of_prob+=freqs[i]
-        for i in range(len(freqs)):
-            if sum_of_prob!=0:
-                probabilities[i]=(float(freqs[i])/float(sum_of_prob))
+            if i<4 and sum_of_probLR!=0:
+                probabilities[i]=(float(freqs[i])/float(sum_of_probLR))
+            if i>=4 and sum_of_probRL!=0:
+                probabilities[i]=(float(freqs[i])/float(sum_of_probRL))
         phrase_pair_probabilities[phrase_pair]=probabilities;
     return phrase_pair_probabilities
 
