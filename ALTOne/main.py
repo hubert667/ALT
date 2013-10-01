@@ -687,7 +687,7 @@ def main():
     - name of file containing sentence of language 1
     - name of file containing sentence of language 2
     - name of file for writing output
-    - maximum length of a phrase pair
+    - maximum length of a phrase pair 
     """
     
     
