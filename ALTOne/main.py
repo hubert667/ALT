@@ -34,7 +34,7 @@ def reordering_probabilities(phrase_pair_reordering_freqs):
     return phrase_pair_probabilities
 
 def histogram_of_orientation(phrase_pair_reordering_freqs):
-    """Calculates histogram of counts of orientations 
+    """Calculates histogram of counts of orientations
     
     Keywords arguments:
     phrase_pair_reordering_freqs- dictionary with key: phrase pair and value: tuple of 8 values of frequency of jumps
