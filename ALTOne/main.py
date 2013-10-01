@@ -310,18 +310,57 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #rl_discontinuous_right (???)
                             sentence_dict[phrase][7] +=1
                             sentence_dict[a][3] +=1
-            for phrase in sentence_dict:
-                phrase_tup = extract_phrase_pairs_gen([phrase], l1, l2).next()
-                if phrase_tup in corpus_dict:
-                    for x in xrange(len(sentence_dict[phrase])):
-                        corpus_dict[phrase_tup][x] += sentence_dict[phrase][x]
-                else:
-                    corpus_dict[phrase_tup] = sentence_dict[phrase]
+            corpus_dict = combine_jump_dicts(sentence_dict, corpus_dict, l1, l2)
+        else: #word based lvl
+            sentence_dict = {}
+            for phrase in phrase_alignments:
+                if phrase not in sentence_dict:
+                    sentence_dict[phrase] = 8*[0]
+                for a in alignCopy:
+                    if a[1] is phrase[3]+1:
+                        #Left to right jumps
+                        if a[0] is phrase[2]+1:
+                            #lr_monotone
+                            sentence_dict[phrase][0] +=1
+                        elif a[0] is phrase[0]-1:
+                            #lr_swap
+                            sentence_dict[phrase][1] +=1
+                        elif a[0] > phrase[2]:
+                            #lr_discontinuous_left
+                            sentence_dict[phrase][2] +=1
+                        elif a[0] < phrase[2]:
+                            #lr_discontinuous_right
+                            sentence_dict[phrase][3] +=1
+                    elif phrase[1] is a[1]+1:
+                        #right to left jumps
+                        if phrase[0] is a[0]+1:
+                            #rl_monotone
+                            sentence_dict[phrase][4] +=1
+                        elif phrase[0] is a[0]-1:
+                            #rl_swap
+                            sentence_dict[phrase][5] +=1
+                        elif phrase[0] > a[0]:
+                            #rl_discontinuous_left (???)
+                            sentence_dict[phrase][6] +=1
+                        elif phrase[0] < a[0]:
+                            #rl_discontinuous_right (???)
+                            sentence_dict[phrase][7] +=1
+            corpus_dict = combine_jump_dicts(sentence_dict, corpus_dict, l1, l2)
 
     alignments.close()
     language1.close()
     language2.close()
     sys.stdout.write('\n')
+    return corpus_dict
+
+def combine_jump_dicts(sentence_dict, corpus_dict, l1, l2):
+    for phrase in sentence_dict:
+        phrase_tup = extract_phrase_pairs_gen([phrase], l1, l2).next()
+        if phrase_tup in corpus_dict:
+            for x in xrange(len(sentence_dict[phrase])):
+                corpus_dict[phrase_tup][x] += sentence_dict[phrase][x]
+        else:
+            corpus_dict[phrase_tup] = sentence_dict[phrase]
     return corpus_dict
 
 def extract_words_pair_freqs(alignments_file, language1_file,
@@ -678,12 +717,7 @@ def main():
 
 
     freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2,
-            phrase_lvl=True, max_length=max_length)
-    '''
-    extract_phrase_pair_jump_freqs(alignments_file, language1_file,
-                              language2_file, phrase_lvl=True, 
-                              max_length = float('inf')):
-    '''
+            phrase_lvl=False, max_length=max_length)
     out = open(output_test, 'w')
     for phrase in freqs:
         out.write('%s ||| %s' % phrase)
