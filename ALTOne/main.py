@@ -677,9 +677,16 @@ def main():
     max_length=7
 
 
-    freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2, max_length)
+    freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2,
+            phrase_lvl=True, max_length=max_length)
+    '''
+    extract_phrase_pair_jump_freqs(alignments_file, language1_file,
+                              language2_file, phrase_lvl=True, 
+                              max_length = float('inf')):
+    '''
     out = open(output_test, 'w')
     for phrase in freqs:
+        out.write('%s ||| %s' % phrase)
         for f in xrange(len(freqs[phrase])):
             out.write(str(freqs[phrase][f]))
             out.write(',')
