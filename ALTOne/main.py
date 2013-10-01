@@ -33,6 +33,17 @@ def reordering_probabilities(phrase_pair_reordering_freqs):
         phrase_pair_probabilities[phrase_pair]=probabilities;
     return phrase_pair_probabilities
 
+"""
+def histogram_of_orientation(phrase_pair_reordering_freqs):
+
+    reordering_histogram={Counter,Counter,Counter,Counter,Counter,Counter,Counter,Counter}
+    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+        for i in range(len(freqs)):
+            number=freqs[i]
+            someCounter=reordering_histogram[i]
+            someCounter[number]+=1
+    return reordering_histogram
+"""
 def histogram_of_orientation(phrase_pair_reordering_freqs):
     """Calculates histogram of counts of orientations
     
@@ -41,12 +52,12 @@ def histogram_of_orientation(phrase_pair_reordering_freqs):
     
     Returns 8 tuple of dictionaries which maps from frequency of some kind of jump to number of phrases which
     """
-    reordering_histogram={Counter,Counter,Counter,Counter,Counter,Counter,Counter,Counter}
-    for phrase_pair, freqs in phrase_pair_reordering_freqs:
+    reordering_histogram=8*[0]
+    for phrase_pair in phrase_pair_reordering_freqs:
+        freqs=phrase_pair_reordering_freqs[phrase_pair]
         for i in range(len(freqs)):
             number=freqs[i]
-            someCounter=reordering_histogram[i]
-            someCounter[number]+=1
+            reordering_histogram[i]+=number
     return reordering_histogram
 
 def conditional_probabilities(phrase_pair_freqs, 
@@ -744,6 +755,8 @@ def main():
     phrase_pairs_to_file(old_output,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
     """
     probabilities=reordering_probabilities(freqs)
+    histogram=histogram_of_orientation(freqs)
+    sys.stdout.write('histogram: %s %s %s %s %s %s %s %s\n' % (histogram[0], histogram[1],histogram[2],histogram[3],histogram[4],histogram[5],histogram[6],histogram[7]))
     reordering_to_file(output_name,probabilities)
     
 if __name__ == '__main__':
