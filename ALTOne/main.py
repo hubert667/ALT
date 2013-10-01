@@ -718,6 +718,8 @@ def main():
 
     freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=False, max_length=max_length)
+    
+    """
     out = open(output_test, 'w')
     for phrase in freqs:
         out.write('%s ||| %s' % phrase)
@@ -736,7 +738,7 @@ def main():
     #l2_phrase_probs = phrase_probabilities(l2_phrase_freqs)
     #joint_probs = joint_probabilities(l1_given_l2, l2_phrase_probs)
     phrase_pairs_to_file(old_output,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
-    
+    """
     probabilities=reordering_probabilities(freqs)
     reordering_to_file(output_name,probabilities)
     
