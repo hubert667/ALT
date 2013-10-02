@@ -1,7 +1,7 @@
 # phrase pair extractor
 
 """
-By Hubert Szostek (10656804) and Sander Nugteren (6042023)
+By Hubert Szostek (10656804) and Sander Nugteren (6042023) 
 """
 
 import argparse
