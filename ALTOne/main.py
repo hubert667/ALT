@@ -679,6 +679,14 @@ def reordering_to_file(file_name,probabilities):
 
     out.close()
     
+def histograms_of_counts_to_file(histogram_phrases,histogram_words,output_name):
+    
+    
+    out = open(output_name+'histogram', 'w')
+    out.write('histogram for phrases: %s %s %s %s %s %s %s %s\n' % (histogram_phrases[0], histogram_phrases[1],histogram_phrases[2],histogram_phrases[3],histogram_phrases[4],histogram_phrases[5],histogram_phrases[6],histogram_phrases[7]))
+    out.write('histogram for words: %s %s %s %s %s %s %s %s\n' % (histogram_words[0], histogram_words[1],histogram_words[2],histogram_words[3],histogram_words[4],histogram_words[5],histogram_words[6],histogram_words[7]))
+    out.close()
+    
 
 def number_of_lines(file_name):
     """Counts the number of lines in a file
@@ -721,17 +729,21 @@ def main():
     language1 = args.language1
     language2 = args.language2
     output_name=args.output;
+    max_length=7
+    
 
+    """
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    output_test="outputfreq"
-    old_output="oldOutput"
-    max_length=7
+    """
+    
 
 
-    freqs = extract_phrase_pair_jump_freqs(alignments, language1, language2,
+    freqs_phrases = extract_phrase_pair_jump_freqs(alignments, language1, language2,
+            phrase_lvl=True, max_length=max_length)
+    freqs_words = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=False, max_length=max_length)
     
     """
@@ -754,10 +766,14 @@ def main():
     #joint_probs = joint_probabilities(l1_given_l2, l2_phrase_probs)
     phrase_pairs_to_file(old_output,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
     """
-    probabilities=reordering_probabilities(freqs)
-    histogram=histogram_of_orientation(freqs)
-    sys.stdout.write('histogram: %s %s %s %s %s %s %s %s\n' % (histogram[0], histogram[1],histogram[2],histogram[3],histogram[4],histogram[5],histogram[6],histogram[7]))
-    reordering_to_file(output_name,probabilities)
+    probabilities_phrases=reordering_probabilities(freqs_phrases)
+    histogram_phrases=histogram_of_orientation(freqs_phrases)
+    probabilities_words=reordering_probabilities(freqs_words)
+    histogram_words=histogram_of_orientation(freqs_words)
+    reordering_to_file(output_name+'phrases',probabilities_phrases)
+    reordering_to_file(output_name+'words',probabilities_words)
+    histograms_of_counts_to_file(histogram_phrases, histogram_words, output_name)
+   
     
 if __name__ == '__main__':
     main()
