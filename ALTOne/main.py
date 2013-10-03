@@ -300,42 +300,48 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                         sentence_dict[a] = 8*[0]
                     if a[1] is phrase[3]+1:
                         #Left to right jumps
-                        sentence_counter[a[0]-phrase[2]] += 1 
                         if a[0] is phrase[2]+1:
                             #lr_monotone
                             sentence_dict[phrase][0] +=1
                             sentence_dict[a][4] +=1
+                            sentence_counter[a[0]-phrase[2]] += 1 
                         elif a[2] is phrase[0]-1:
                             #lr_swap
                             sentence_dict[phrase][1] +=1
                             sentence_dict[a][5] +=1
+                            sentence_counter[a[0]-phrase[2]] += 1 
                         elif a[2] < phrase[0]:
                             #lr_discontinuous_left
                             sentence_dict[phrase][2] +=1
                             sentence_dict[a][6] +=1
+                            sentence_counter[a[0]-phrase[2]] += 1 
                         elif a[0] > phrase[2]:
                             #lr_discontinuous_right
                             sentence_dict[phrase][3] +=1
                             sentence_dict[a][7] +=1
+                            sentence_counter[a[0]-phrase[2]] += 1 
                     elif phrase[1] is a[3]+1:
                         #right to left jumps
-                        sentence_counter[phrase[0]-a[2]] += 1 
                         if phrase[0] is a[2]+1:
                             #rl_monotone
                             sentence_dict[phrase][4] +=1
                             sentence_dict[a][0] +=1
+                            sentence_counter[phrase[0]-a[2]] += 1 
                         elif phrase[2] is a[0]-1:
                             #rl_swap
                             sentence_dict[phrase][5] +=1
                             sentence_dict[a][1] +=1
+                            sentence_counter[phrase[0]-a[2]] += 1 
                         elif phrase[2] < a[0]:
                             #rl_discontinuous_left (???)
                             sentence_dict[phrase][6] +=1
                             sentence_dict[a][2] +=1
+                            sentence_counter[phrase[0]-a[2]] += 1 
                         elif phrase[0] > a[2]:
                             #rl_discontinuous_right (???)
                             sentence_dict[phrase][7] +=1
                             sentence_dict[a][3] +=1
+                            sentence_counter[phrase[0]-a[2]] += 1 
             corpus_dict = combine_jump_dicts(sentence_dict, corpus_dict, l1, l2)
             corpus_counter += sentence_counter
         else: #word based lvl
