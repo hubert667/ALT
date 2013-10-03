@@ -682,10 +682,17 @@ def reordering_to_file(file_name,probabilities):
 def histograms_of_counts_to_file(histogram_phrases,histogram_words,output_name):
     
     
-    out = open(output_name+'histogram', 'w')
-    out.write('histogram for phrases: %s %s %s %s %s %s %s %s\n' % (histogram_phrases[0], histogram_phrases[1],histogram_phrases[2],histogram_phrases[3],histogram_phrases[4],histogram_phrases[5],histogram_phrases[6],histogram_phrases[7]))
-    out.write('histogram for words: %s %s %s %s %s %s %s %s\n' % (histogram_words[0], histogram_words[1],histogram_words[2],histogram_words[3],histogram_words[4],histogram_words[5],histogram_words[6],histogram_words[7]))
+    out = open(output_name+'WordsHistogram.csv', 'w')
+    for i in range(len(histogram_words)):
+        out.write(str(i+1)+','+str(histogram_words[i])+'\n')
     out.close()
+    out = open(output_name+'PhrasesHistogram.csv', 'w')
+    for i in range(len(histogram_words)):
+        out.write(str(i+1)+','+str(histogram_phrases[i])+'\n')
+    out.close()
+    #out.write('histogram for phrases: %s %s %s %s %s %s %s %s\n' % (histogram_phrases[0], histogram_phrases[1],histogram_phrases[2],histogram_phrases[3],histogram_phrases[4],histogram_phrases[5],histogram_phrases[6],histogram_phrases[7]))
+    #out.write('histogram for words: %s %s %s %s %s %s %s %s\n' % (histogram_words[0], histogram_words[1],histogram_words[2],histogram_words[3],histogram_words[4],histogram_words[5],histogram_words[6],histogram_words[7]))
+    #out.close()
     
 
 def number_of_lines(file_name):
@@ -732,12 +739,12 @@ def main():
     max_length=7
     
 
-    """
+    
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    """
+    
     
 
 
