@@ -321,7 +321,6 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #rl_swap
                             sentence_dict[phrase][5] +=1
                             sentence_dict[a][1] +=1
-                            sentence_counter[-1] += 1 
                         elif phrase[0] < a[2]:
                             #rl_discontinuous_left (???)
                             sentence_dict[phrase][6] +=1
@@ -699,6 +698,7 @@ def histograms_of_counts_to_file(histogram_phrases,histogram_words,output_name):
     
 def dists_to_csv(dists, file_name):
     out = open(file_name, 'w')
+    del dists[0]
     for d in sorted(dists.keys()):
         out.write('%s, %s\n' % (d, dists[d]))
 
@@ -745,12 +745,12 @@ def main():
     output_name=args.output;
     max_length=7
     
-    """
+    '''
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    """
+    '''
 
     freqs_phrases, dists_phrases = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=True, max_length=max_length)
@@ -784,8 +784,8 @@ def main():
     reordering_to_file(output_name+'phrases',probabilities_phrases)
     reordering_to_file(output_name+'words',probabilities_words)
     histograms_of_counts_to_file(histogram_phrases, histogram_words, output_name)
-    dists_to_csv(dists_phrases, 'distance_phrases.csv')
-    dists_to_csv(dists_words, 'distance_words.csv')
+    dists_to_csv(dists_phrases, output_name+'distance_phrases.csv')
+    dists_to_csv(dists_words, output_name+'distance_words.csv')
     
 if __name__ == '__main__':
     main()
