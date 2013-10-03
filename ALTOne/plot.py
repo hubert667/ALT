@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plotAlphaGamma():
+def plotHistogramOfOccurrences(name1,name2,title):
 
 
     # for gamma in gammas:
-    data = np.genfromtxt('outputPhrasesHistogram'+
+    data = np.genfromtxt('outputs\\'+name1+
             '.csv', delimiter=',', names=['x', 'y'])
-    data2 = np.genfromtxt('outputPhrasesHistogram'+
+    data2 = np.genfromtxt('outputs\\'+name2+
             '.csv', delimiter=',', names=['x', 'y'])
     """
     plt.xlabel('Index of the jump')
@@ -17,7 +17,6 @@ def plotAlphaGamma():
     plt.title('Histogram reordering')
     plt.hist(data['x'], data['y'])
     """
-    
    
     xx=data['x']
     yy=data['y']
@@ -35,8 +34,8 @@ def plotAlphaGamma():
     rects2 = ax.bar(ind+width, yy2, width, color='y')
     
     # add some
-    ax.set_ylabel('Scores')
-    ax.set_title('Scores by group and gender')
+    ax.set_ylabel('% of occurrence')
+    ax.set_title(title)
     ax.set_xticks(ind+width)
 
     ax.set_xticklabels( xx )
@@ -51,13 +50,13 @@ def plotAlphaGamma():
                     ha='center', va='bottom')
     
     autolabel(rects1)
-    autolabel(rects2)
-    
+    autolabel(rects2)   
     plt.show()
     
-
-
-
-
-plotAlphaGamma()
-
+    
+clean='clean.output'
+web='web.output'   
+plotHistogramOfOccurrences(clean+'PhrasesHistogram', web+'PhrasesHistogram','Histogram of occurrences of phrases based orientations')
+plotHistogramOfOccurrences(clean+'WordsHistogram', web+'WordsHistogram','Histogram of occurrences of words based orientations')
+plotHistogramOfOccurrences(clean+'distance_phrases', web+'distance_phrases', 'Histogram of occurrences of distances between phrases')
+plotHistogramOfOccurrences(clean+'distance_words', web+'distance_words', 'Histogram of occurrences of distances between phrases and words')

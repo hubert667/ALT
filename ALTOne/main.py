@@ -313,7 +313,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #lr_discontinuous_left
                             sentence_dict[phrase][2] +=1
                             sentence_dict[a][6] +=1
-                        elif a[0] > phrase[2]:
+                        elif a[2] > phrase[0]:
                             #lr_discontinuous_right
                             sentence_dict[phrase][3] +=1
                             sentence_dict[a][7] +=1
@@ -328,7 +328,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #rl_swap
                             sentence_dict[phrase][5] +=1
                             sentence_dict[a][1] +=1
-                        elif phrase[0] < a[2]:
+                        elif phrase[2] < a[0]:
                             #rl_discontinuous_left (???)
                             sentence_dict[phrase][6] +=1
                             sentence_dict[a][2] +=1
@@ -695,20 +695,7 @@ def reordering_to_file(file_name,probabilities):
 
     out.close()
     
-def histograms_of_counts_to_file(histogram_phrases,histogram_words,output_name):
-    
-    
-    out = open(output_name+'WordsHistogram.csv', 'w')
-    for i in range(len(histogram_words)):
-        out.write(str(i+1)+','+str(histogram_words[i])+'\n')
-    out.close()
-    out = open(output_name+'PhrasesHistogram.csv', 'w')
-    for i in range(len(histogram_words)):
-        out.write(str(i+1)+','+str(histogram_phrases[i])+'\n')
-    out.close()
-    #out.write('histogram for phrases: %s %s %s %s %s %s %s %s\n' % (histogram_phrases[0], histogram_phrases[1],histogram_phrases[2],histogram_phrases[3],histogram_phrases[4],histogram_phrases[5],histogram_phrases[6],histogram_phrases[7]))
-    #out.write('histogram for words: %s %s %s %s %s %s %s %s\n' % (histogram_words[0], histogram_words[1],histogram_words[2],histogram_words[3],histogram_words[4],histogram_words[5],histogram_words[6],histogram_words[7]))
-    #out.close()
+
     
 def dists_to_csv(dists, file_name):
     out = open(file_name, 'w')
@@ -718,9 +705,18 @@ def dists_to_csv(dists, file_name):
         
 def occurrences_to_csv(dists, file_name):
     out = open(file_name, 'w')
-    del dists[0]
     for d in range(len(dists)):
-        out.write('%s, %s\n' % (d, 100*float(dists[d])/float(sum(dists))))
+        out.write('%s, %s\n' % (d+1, 100*float(dists[d])/float(sum(dists))))
+        
+def freqs_of_jumps_to_file(file_name,freqs):
+    out = open(file_name, 'w')
+    for phrase in freqs:
+        out.write('%s ||| %s  ' % phrase)
+        for f in xrange(len(freqs[phrase])):
+            out.write(str(freqs[phrase][f]))
+            out.write(',')
+        out.write('\n')
+    out.close()
 
 def number_of_lines(file_name):
     """Counts the number of lines in a file
@@ -767,12 +763,12 @@ def main():
     
 
     
-    """
+    
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    """
+    
     
     
 
@@ -805,9 +801,10 @@ def main():
     histogram_phrases=histogram_of_orientation(freqs_phrases)
     probabilities_words=reordering_probabilities(freqs_words)
     histogram_words=histogram_of_orientation(freqs_words)
+    freqs_of_jumps_to_file(output_name+'PhrasesFreqs', freqs_phrases)
+    freqs_of_jumps_to_file(output_name+'WordsFreqs', freqs_words)
     reordering_to_file(output_name+'phrases',probabilities_phrases)
     reordering_to_file(output_name+'words',probabilities_words)
-    histograms_of_counts_to_file(histogram_phrases, histogram_words, output_name)
     occurrences_to_csv(histogram_phrases,output_name+'PhrasesHistogram.csv')
     occurrences_to_csv(histogram_words,output_name+'WordsHistogram.csv')
     dists_to_csv(dists_phrases, output_name+'distance_phrases.csv')
