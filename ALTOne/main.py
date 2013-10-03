@@ -309,11 +309,11 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #lr_swap
                             sentence_dict[phrase][1] +=1
                             sentence_dict[a][5] +=1
-                        elif a[0] < phrase[2]:
+                        elif a[2] < phrase[0]:
                             #lr_discontinuous_left
                             sentence_dict[phrase][2] +=1
                             sentence_dict[a][6] +=1
-                        elif a[2] > phrase[0]:
+                        elif a[0] > phrase[2]:
                             #lr_discontinuous_right
                             sentence_dict[phrase][3] +=1
                             sentence_dict[a][7] +=1
