@@ -18,11 +18,11 @@ def plotHistogramOfOccurrences(name1,name2,title):
     plt.hist(data['x'], data['y'])
     """
    
-    xx=data['x']
+    xxFloat=data['x']
     yy=data['y']
     xx2=data2['x']
     yy2=data2['y']
-    N = len(xx)
+    N = len(xx2)
     
     ind = np.arange(N)  # the x locations for the groups
     width = 0.35       # the width of the bars
@@ -37,7 +37,9 @@ def plotHistogramOfOccurrences(name1,name2,title):
     ax.set_ylabel('% of occurrence')
     ax.set_title(title)
     ax.set_xticks(ind+width)
-
+    xx=len(xxFloat)*[0]
+    for i in range(len(xxFloat)):
+        xx[i]=int(xxFloat[i])
     ax.set_xticklabels( xx )
     
     ax.legend( (rects1[0], rects2[0]), ('clean', 'web') )
@@ -56,7 +58,7 @@ def plotHistogramOfOccurrences(name1,name2,title):
     
 clean='clean.output'
 web='web.output'   
-plotHistogramOfOccurrences(clean+'PhrasesHistogram', web+'PhrasesHistogram','Histogram of occurrences of phrases based orientations')
-plotHistogramOfOccurrences(clean+'WordsHistogram', web+'WordsHistogram','Histogram of occurrences of words based orientations')
-plotHistogramOfOccurrences(clean+'distance_phrases', web+'distance_phrases', 'Histogram of occurrences of distances between phrases')
+#plotHistogramOfOccurrences(clean+'PhrasesHistogram', web+'PhrasesHistogram','Histogram of occurrences of phrases based orientations')
+#plotHistogramOfOccurrences(clean+'WordsHistogram', web+'WordsHistogram','Histogram of occurrences of words based orientations')
+#plotHistogramOfOccurrences(clean+'distance_phrases', web+'distance_phrases', 'Histogram of occurrences of distances between phrases')
 plotHistogramOfOccurrences(clean+'distance_words', web+'distance_words', 'Histogram of occurrences of distances between phrases and words')
