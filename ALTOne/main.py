@@ -262,6 +262,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
     language1 = open(language1_file, 'r')
     language2 = open(language2_file, 'r')
     corpus_dict = {} 
+    corpus_counter = Counter()
     
     for i, str_align in enumerate(alignments):
         if num_lines>100:
@@ -279,6 +280,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
         
         if phrase_lvl:
             sentence_dict = {}
+            sentence_counter = Counter()
             while phrase_alignments:
                 phrase = phrase_alignments.pop()
                 if phrase not in sentence_dict:
@@ -291,6 +293,7 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                         sentence_dict[a] = 8*[0]
                     if a[1] is phrase[3]+1:
                         #Left to right jumps
+                        sentence_counter[a[0]-phrase[2]] += 1 
                         if a[0] is phrase[2]+1:
                             #lr_monotone
                             sentence_dict[phrase][0] +=1
@@ -299,16 +302,17 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #lr_swap
                             sentence_dict[phrase][1] +=1
                             sentence_dict[a][5] +=1
-                        elif a[0] > phrase[2]:
+                        elif a[0] < phrase[2]:
                             #lr_discontinuous_left
                             sentence_dict[phrase][2] +=1
                             sentence_dict[a][6] +=1
-                        elif a[0] < phrase[2]:
+                        elif a[0] > phrase[2]:
                             #lr_discontinuous_right
                             sentence_dict[phrase][3] +=1
                             sentence_dict[a][7] +=1
                     elif phrase[1] is a[3]+1:
                         #right to left jumps
+                        sentence_counter[phrase[0]-a[2]] += 1 
                         if phrase[0] is a[2]+1:
                             #rl_monotone
                             sentence_dict[phrase][4] +=1
@@ -317,56 +321,62 @@ def extract_phrase_pair_jump_freqs(alignments_file, language1_file,
                             #rl_swap
                             sentence_dict[phrase][5] +=1
                             sentence_dict[a][1] +=1
-                        elif phrase[0] > a[2]:
+                            sentence_counter[-1] += 1 
+                        elif phrase[0] < a[2]:
                             #rl_discontinuous_left (???)
                             sentence_dict[phrase][6] +=1
                             sentence_dict[a][2] +=1
-                        elif phrase[0] < a[2]:
+                        elif phrase[0] > a[2]:
                             #rl_discontinuous_right (???)
                             sentence_dict[phrase][7] +=1
                             sentence_dict[a][3] +=1
             corpus_dict = combine_jump_dicts(sentence_dict, corpus_dict, l1, l2)
+            corpus_counter += sentence_counter
         else: #word based lvl
             sentence_dict = {}
+            sentence_counter = Counter()
             for phrase in phrase_alignments:
                 if phrase not in sentence_dict:
                     sentence_dict[phrase] = 8*[0]
                 for a in alignCopy:
                     if a[1] is phrase[3]+1:
                         #Left to right jumps
+                        sentence_counter[a[0]-phrase[2]] += 1 
                         if a[0] is phrase[2]+1:
                             #lr_monotone
                             sentence_dict[phrase][0] +=1
                         elif a[0] is phrase[0]-1:
                             #lr_swap
                             sentence_dict[phrase][1] +=1
-                        elif a[0] > phrase[2]:
+                        elif a[0] < phrase[2]:
                             #lr_discontinuous_left
                             sentence_dict[phrase][2] +=1
-                        elif a[0] < phrase[2]:
+                        elif a[0] > phrase[2]:
                             #lr_discontinuous_right
                             sentence_dict[phrase][3] +=1
                     elif phrase[1] is a[1]+1:
                         #right to left jumps
+                        sentence_counter[phrase[0]-a[0]] += 1 
                         if phrase[0] is a[0]+1:
                             #rl_monotone
                             sentence_dict[phrase][4] +=1
                         elif phrase[0] is a[0]-1:
                             #rl_swap
                             sentence_dict[phrase][5] +=1
-                        elif phrase[0] > a[0]:
+                        elif phrase[0] < a[0]:
                             #rl_discontinuous_left (???)
                             sentence_dict[phrase][6] +=1
-                        elif phrase[0] < a[0]:
+                        elif phrase[0] > a[0]:
                             #rl_discontinuous_right (???)
                             sentence_dict[phrase][7] +=1
             corpus_dict = combine_jump_dicts(sentence_dict, corpus_dict, l1, l2)
+            corpus_counter += sentence_counter
 
     alignments.close()
     language1.close()
     language2.close()
     sys.stdout.write('\n')
-    return corpus_dict
+    return corpus_dict, corpus_counter
 
 def combine_jump_dicts(sentence_dict, corpus_dict, l1, l2):
     for phrase in sentence_dict:
@@ -687,6 +697,10 @@ def histograms_of_counts_to_file(histogram_phrases,histogram_words,output_name):
     out.write('histogram for words: %s %s %s %s %s %s %s %s\n' % (histogram_words[0], histogram_words[1],histogram_words[2],histogram_words[3],histogram_words[4],histogram_words[5],histogram_words[6],histogram_words[7]))
     out.close()
     
+def dists_to_csv(dists, file_name):
+    out = open(file_name, 'w')
+    for d in sorted(dists.keys()):
+        out.write('%s, %s\n' % (d, dists[d]))
 
 def number_of_lines(file_name):
     """Counts the number of lines in a file
@@ -731,19 +745,16 @@ def main():
     output_name=args.output;
     max_length=7
     
-
     """
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
     """
-    
 
-
-    freqs_phrases = extract_phrase_pair_jump_freqs(alignments, language1, language2,
+    freqs_phrases, dists_phrases = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=True, max_length=max_length)
-    freqs_words = extract_phrase_pair_jump_freqs(alignments, language1, language2,
+    freqs_words, dists_words = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=False, max_length=max_length)
     
     """
@@ -773,7 +784,8 @@ def main():
     reordering_to_file(output_name+'phrases',probabilities_phrases)
     reordering_to_file(output_name+'words',probabilities_words)
     histograms_of_counts_to_file(histogram_phrases, histogram_words, output_name)
-   
+    dists_to_csv(dists_phrases, 'distance_phrases.csv')
+    dists_to_csv(dists_words, 'distance_words.csv')
     
 if __name__ == '__main__':
     main()
