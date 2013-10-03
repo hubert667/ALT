@@ -769,12 +769,12 @@ def main():
     
 
     
-    
+    """
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    
+    """
     
     
 
