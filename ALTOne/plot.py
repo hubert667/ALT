@@ -48,8 +48,8 @@ def plotHistogramOfOccurrences(name1,name2,title):
         # attach some text labels
         for rect in rects:
             height = rect.get_height()
-            ax.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
-                    ha='center', va='bottom')
+            #ax.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
+            #        ha='center', va='bottom')
     
     autolabel(rects1)
     autolabel(rects2)   
@@ -58,7 +58,7 @@ def plotHistogramOfOccurrences(name1,name2,title):
     
 clean='clean.output'
 web='web.output'   
-#plotHistogramOfOccurrences(clean+'PhrasesHistogram', web+'PhrasesHistogram','Histogram of occurrences of phrases based orientations')
-#plotHistogramOfOccurrences(clean+'WordsHistogram', web+'WordsHistogram','Histogram of occurrences of words based orientations')
-#plotHistogramOfOccurrences(clean+'distance_phrases', web+'distance_phrases', 'Histogram of occurrences of distances between phrases')
+plotHistogramOfOccurrences(clean+'PhrasesHistogram', web+'PhrasesHistogram','Histogram of occurrences of phrases based orientations')
+plotHistogramOfOccurrences(clean+'WordsHistogram', web+'WordsHistogram','Histogram of occurrences of words based orientations')
+plotHistogramOfOccurrences(clean+'distance_phrases', web+'distance_phrases', 'Histogram of occurrences of distances between phrases')
 plotHistogramOfOccurrences(clean+'distance_words', web+'distance_words', 'Histogram of occurrences of distances between phrases and words')

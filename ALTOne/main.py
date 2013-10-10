@@ -7,6 +7,8 @@ By Hubert Szostek (10656804) and Sander Nugteren (6042023)
 import argparse
 from collections import Counter
 import sys
+from languageModel import *
+
 
 def reordering_probabilities(phrase_pair_reordering_freqs):
     """Calculates reordering probabilities based on frequency of jumps
@@ -713,6 +715,7 @@ def occurrences_to_csv(dists, file_name):
     out = open(file_name, 'w')
     for d in range(len(dists)):
         out.write('%s, %s\n' % (d+1, 100*float(dists[d])/float(sum(dists))))
+    out.close()
         
 def freqs_of_jumps_to_file(file_name,freqs):
     out = open(file_name, 'w')
@@ -769,19 +772,21 @@ def main():
     
 
     
-    """
+    
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
+    
+    
+    
+    
     """
-    
-    
-
     freqs_phrases, dists_phrases = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=True, max_length=max_length)
     freqs_words, dists_words = extract_phrase_pair_jump_freqs(alignments, language1, language2,
             phrase_lvl=False, max_length=max_length)
+    """
     
     """
     out = open(output_test, 'w')
@@ -803,6 +808,7 @@ def main():
     #joint_probs = joint_probabilities(l1_given_l2, l2_phrase_probs)
     phrase_pairs_to_file(old_output,l1_given_l2, l2_given_l1, l1_lexical_given_l2,l2_lexical_given_l1,l1_phrase_freqs, l2_phrase_freqs, phrase_pair_freqs )
     """
+    """
     probabilities_phrases=reordering_probabilities(freqs_phrases)
     histogram_phrases=histogram_of_orientation(freqs_phrases)
     probabilities_words=reordering_probabilities(freqs_words)
@@ -815,6 +821,14 @@ def main():
     occurrences_to_csv(histogram_words,output_name+'WordsHistogram.csv')
     dists_to_csv(dists_phrases, output_name+'distance_phrases.csv')
     dists_to_csv(dists_words, output_name+'distance_words.csv')
+    """
+    
+    max_length_of_phrase=3
+    max_length_of_ngrams=3
+    
+    ngrams_prob,ngrams_counts=calculate_language_model(language1,max_length_of_ngrams)
+    save_language_model(ngrams_counts,language1+'_language_model_counts')
+    save_language_model(ngrams_prob,language1+'_language_model')
     
 if __name__ == '__main__':
     main()
