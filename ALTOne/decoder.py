@@ -2,11 +2,11 @@ from uuid import _last_timestamp
 from gettext import _current_domain
 class Graph:
 
-    self.source_phrase = ''
-    self.beam_width = 0
-    self.nodes = []
-    self.node_map = {} #maps indexes from nodes to others (sort of like pointers I guess?)
-    self.equiv_nodes = {} #maps the best node to its equivalents
+    source_phrase = ''
+    beam_width = 0
+    nodes = []
+    node_map = {} #maps indexes from nodes to others (sort of like pointers I guess?)
+    equiv_nodes = {} #maps the best node to its equivalents
 
     def __init__(self, source_phrase, beam_width):
         self.source_phrase = source_phrase
@@ -32,16 +32,16 @@ class Graph:
         return 0
 
 class Node:
-    self.previous_nodes=[]
-    self.last_history=[]
-    self.already_translated=[]
-    self.current_positions=[]
-    self.source_phrase=''
-    self.current_position_translation=''
-    self.probability=0
-    self.previous_cost=0
-    self.stopped = False #this is to see if we should expand the node or not
-    self.better_equiv_node_exists = False #difference with the prev one is that paths can go through this on the way back
+    previous_nodes=[]
+    last_history=[]
+    already_translated=[]
+    current_positions=[]
+    source_phrase=''
+    current_position_translation=''
+    probability=0
+    previous_cost=0
+    stopped = False #this is to see if we should expand the node or not
+    better_equiv_node_exists = False #difference with the prev one is that paths can go through this on the way back
 
     def __init__(self,_source_phrase,_current_position_translation,_previous_node,_last_history,_already_translated,_current_positions,_cost):
         self.last_history=_last_history
@@ -53,7 +53,7 @@ class Node:
         self.source_phrase=_source_phrase  
 
     def calculate_probability(self,language_model,l1_given_l2,l2_given_l2):
-        phrase_pair=(current_position_translation, ' '.join(self.source_phrase[self.current_positions[0]:self.current__positions[1]]))
+        phrase_pair=(self.current_position_translation, ' '.join(self.source_phrase[self.current_positions[0]:self.current__positions[1]]))
         grade1=l1_given_l2(phrase_pair)
         grade2=l2_given_l2(phrase_pair)
         grade_language_model=language_model(phrase_pair)
