@@ -1,11 +1,47 @@
+import sys
+
+def translate(language1,l1_given_l2,l2_given_l1,ngrams_prob):
+    language1 = open(language1, 'r')
+    num_lines = number_of_lines(language1)
+    beam_width=5
+    for i, oneLine in enumerate(language1):
+        if num_lines>100:
+            if  i % (num_lines/100) is 0:
+                sys.stdout.write('\r%d%%' % (i*100/num_lines,))
+                sys.stdout.flush()
+        sentences=oneLine.split('.')
+        for sentence in sentences:
+            grapth=Graph(sentence,beam_width)
+            
+                
+                
+def number_of_lines(file_name):
+    """Counts the number of lines in a file
+    
+    Keywords arguments:
+    file_name -- name of file
+    
+    Returns number of lines
+    """
+    amount = 0
+    doc = open(file_name, 'r')
+    for _ in doc:
+        amount += 1
+
+    doc.close()
+    return amount
+
+
 class Graph:
 
     source_phrase = ''
+    destination_phrase=''
     beam_width = 0
     nodes = []
     node_map = {} #maps indexes from nodes to their parents (sort of like pointers I guess?)
     equiv_nodes = {} #maps the best node to its equivalents
     expanded = True #This shows if the graph can still be expanded
+    
 
     def __init__(self, source_phrase, beam_width):
         self.source_phrase = source_phrase
@@ -41,9 +77,12 @@ class Graph:
         node = self.nodes[node_id]
         self.nodes[node_id] = node 
         return 0
+    
+    def calculate_translation(self):
+        return self.destination_phrase
 
 class Node:
-    previous_nodes=[]#links to the previous nodes
+    previous_nodes=[]#links to thimport syse previous nodes
     last_history=[] #last n-1 words in history 
     already_translated=[]#  numbers of words which were translated- coverage vector
     current_positions=[] #numbers of word in the sentence which are currently translated
@@ -71,3 +110,8 @@ class Node:
         phrase_penalty=-1
         word_penalty=0
         disortion=0
+        result=grade1+grade2+grade_language_model+phrase_penalty+word_penalty+disortion;
+        self.probability=result;
+        
+        
+        

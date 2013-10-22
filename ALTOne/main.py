@@ -8,6 +8,7 @@ import argparse
 from collections import Counter
 import sys
 from languageModel import *
+from decoder import *
 
 
 def reordering_probabilities(phrase_pair_reordering_freqs):
@@ -768,7 +769,7 @@ def main():
     language1 = args.language1
     language2 = args.language2
     output_name=args.output;
-    max_length=7
+    #max_length=3
     
 
     
@@ -825,8 +826,15 @@ def main():
     
     max_length_of_phrase=3
     max_length_of_ngrams=3
-    
+    freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length_of_phrase)
+    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqsOld
+    l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
+                              l1_phrase_freqs, l2_phrase_freqs)   
     ngrams_prob,ngrams_counts=calculate_language_model(language1,max_length_of_ngrams)
+    
+    translate(language1,language2,l1_given_l2,l2_given_l1,ngrams_prob)
+    
+    
     save_language_model(ngrams_counts,language1+'_language_model_counts')
     save_language_model(ngrams_prob,language1+'_language_model')
     
