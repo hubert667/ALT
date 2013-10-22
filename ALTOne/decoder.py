@@ -74,8 +74,24 @@ class Graph:
         This method finds nodes equivalent to node and makes pointers to them
         Don't know if this should be in here, or maybe at the graph level?
         '''
-        node = self.nodes[node_id]
-        self.nodes[node_id] = node 
+        node1 = self.nodes[node_id]
+        for n_id in xrange(len(self.nodes)):
+            node2 = self.nodes[n_id]
+            #if NODES EQUIVALENT:
+            if node1.already_translated == node2.already_translated and\
+                node1.current_position_translation == node2.current_position_translation:
+                if node2 in self.equiv_nodes:
+                    if node2.probability >= node1.probability:
+                        self.equiv_nodes[n_id].append(node_id)
+                    else:
+                        equivalents = self.equiv_nodes[n_id].append(n_id)
+                        self.equiv_nodes[node_id].append(equivalents)
+                        del self.equiv_nodes[n_id]
+                else:
+                    if node2.probability >= node1.probability:
+                        self.equiv_nodes[n_id] = [node_id]
+                    else:
+                        self.equiv_nodes[node_id] = [n_id]
         return 0
     
     def calculate_translation(self):
