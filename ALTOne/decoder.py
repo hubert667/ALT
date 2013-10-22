@@ -32,12 +32,12 @@ class Graph:
         return 0
 
 class Node:
-    previous_nodes=[]
-    last_history=[]
-    already_translated=[]
-    current_positions=[]
-    source_phrase=''
-    current_position_translation=''
+    previous_nodes=[]#links to the previous nodes
+    last_history=[] #last n-1 words in history 
+    already_translated=[]#  numbers of words which were translated- coverage vector
+    current_positions=[] #numbers of word in the sentence which are currently translated
+    source_phrase='' #the whole source sentence
+    current_position_translation='' #currently translated position
     probability=0
     previous_cost=0
     stopped = False #this is to see if we should expand the node or not
@@ -52,7 +52,7 @@ class Node:
         self.current_position_translation=_current_position_translation
         self.source_phrase=_source_phrase  
 
-    def calculate_probability(self,language_model,l1_given_l2,l2_given_l2):
+    def calculate_probability(self,language_model,l1_given_l2,l2_given_l2,translation):
         phrase_pair=(self.current_position_translation, ' '.join(self.source_phrase[self.current_positions[0]:self.current__positions[1]]))
         grade1=l1_given_l2(phrase_pair)
         grade2=l2_given_l2(phrase_pair)
