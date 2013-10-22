@@ -1,12 +1,11 @@
-from uuid import _last_timestamp
-from gettext import _current_domain
 class Graph:
 
     source_phrase = ''
     beam_width = 0
     nodes = []
-    node_map = {} #maps indexes from nodes to others (sort of like pointers I guess?)
+    node_map = {} #maps indexes from nodes to their parents (sort of like pointers I guess?)
     equiv_nodes = {} #maps the best node to its equivalents
+    expanded = True #This shows if the graph can still be expanded
 
     def __init__(self, source_phrase, beam_width):
         self.source_phrase = source_phrase
@@ -16,19 +15,31 @@ class Graph:
         '''
         This loops through nodes to expand/collapse them
         '''
-        return 0
+        self.expanded = False
+        for n_id in xrange(len(self.nodes)):
+            n = self.nodes[n_id]
+            if not n.collapsed:
+                self.collapse_node(n_id)
+                self.expanded = True
+            if not n.stopped:
+                self.expand_node(n_id)
+                self.expanded = True
 
-    def expand_node(self, node):
+    def expand_node(self, node_id):
         '''
         This method creates new nodes from node
         '''
+        node = self.nodes[node_id]
+        self.nodes[node_id] = node 
         return 0
 
-    def collapse_node(self, node):
+    def collapse_node(self, node_id):
         '''
         This method finds nodes equivalent to node and makes pointers to them
         Don't know if this should be in here, or maybe at the graph level?
         '''
+        node = self.nodes[node_id]
+        self.nodes[node_id] = node 
         return 0
 
 class Node:
@@ -41,7 +52,7 @@ class Node:
     probability=0
     previous_cost=0
     stopped = False #this is to see if we should expand the node or not
-    better_equiv_node_exists = False #difference with the prev one is that paths can go through this on the way back
+    collapsed = False #difference with the prev one is that paths can go through this on the way back
 
     def __init__(self,_source_phrase,_current_position_translation,_previous_node,_last_history,_already_translated,_current_positions,_cost):
         self.last_history=_last_history
