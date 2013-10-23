@@ -29,8 +29,8 @@ class Graph:
         '''
         This method creates new nodes from node
         '''
-        node = nodes[node_id]
-        nodes[node_id] = node 
+        node = self.nodes[node_id]
+        self.nodes[node_id] = node 
         return 0
 
     def collapse_node(self, node_id):
@@ -38,9 +38,9 @@ class Graph:
         This method finds nodes equivalent to node and makes pointers to them
         Don't know if this should be in here, or maybe at the graph level?
         '''
-        node1 = nodes[node_id]
+        node1 = self.nodes[node_id]
         for n_id in xrange(len(self.nodes)):
-            node2 = nodes[n_id]
+            node2 = self.nodes[n_id]
             #if NODES EQUIVALENT:
             if node1.already_translated == node2.already_translated and\
                 node1.current_position_translation == node2.current_position_translation:
