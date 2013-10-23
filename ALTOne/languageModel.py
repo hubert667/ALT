@@ -46,7 +46,7 @@ def  calculate_language_model(file_name, max_number_of_words):
             probability=(float)(ngrams_counts[ngram])/(float)(ngrams_counts[shorter_ngram])
         else:
             probability=(float)(ngrams_counts[ngram])/one_word_counter
-        ngrams_probabilities[ngram]=math.log10(probability) 
+        ngrams_probabilities[ngram]=(probability) 
     
     return ngrams_probabilities,ngrams_counts
 
