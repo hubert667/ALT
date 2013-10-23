@@ -42,6 +42,27 @@ def number_of_lines(file_name):
     doc.close()
     return amount
 
+def calculate_stupid_backoff(local_ngram_list,language_model):
+        
+        if len(local_ngram_list)<1:
+            return 0 # this should never happen
+        stupid_backoff_rate=0.4 #rate for stupid backoff
+        local_ngram=tuple(local_ngram_list)
+        i=len(local_ngram_list)
+        if i==1:
+            local_ngram=(local_ngram_list[0],'','')
+        if i==2:
+            local_ngram=(local_ngram_list[0],local_ngram_list[1],'')
+        if i==3:
+            local_ngram=(local_ngram_list[0],local_ngram_list[1],local_ngram_list[2])
+            
+        if local_ngram in language_model:
+            return language_model[local_ngram]
+        else:
+            shorten_ngram=local_ngram_list[:]
+            del shorten_ngram[0]
+            return stupid_backoff_rate*calculate_stupid_backoff(shorten_ngram,language_model)
+
 
 class Graph:
     """
@@ -88,8 +109,14 @@ class Graph:
         '''
         This method creates new nodes from node
         '''
+        
         node = self.nodes[node_id]
-        self.nodes[node_id] = node 
+        list_of_next_nodes=self.generate_next_nodes(node)
+        """
+        nodes from this list should be added to appropriate stacks, and some of them can be deleted
+        if limit of the stacks is exceded
+        """
+        
         return 0
 
     def collapse_node(self, node_id):
@@ -117,6 +144,56 @@ class Graph:
                         self.equiv_nodes[node_id] = [n_id]
         return 0
     
+    def generate_next_nodes(self,node):
+        """
+        Generates all possible nodes from given node
+        """
+        coverage_vec=node.already_translated
+        begin=0
+        end=0
+        within=0
+        list_of_positions=[]
+        for i in range(len(coverage_vec)):
+            if within==0 and coverage_vec[i]==0:
+                begin=i
+                within =1
+            elif within==1 and coverage_vec[i]==1:
+                end=i-1
+                within=0
+                positions=self.generate_positions(begin,end)
+                list_of_positions=list_of_positions+positions
+        if within==1:
+            positions=self.generate_positions(begin,len(coverage_vec)-1)
+            list_of_positions=list_of_positions+positions
+                       
+        next_nodes=self.generate_nodes_from_positions(list_of_positions,node)
+        return next_nodes
+    
+    def generate_positions(self,begin,end):
+        """
+        Generates all possible arrays [x,x2] where x>=begin and x2<end and the maximum legth od 3
+        """
+        positions=[]
+        for length in range(self.max_phrase_length):
+            for i in range(begin,end+1):
+                if (i+length)<=end:
+                    local=[i,i+length]
+                    positions.append(local)
+        return positions
+    
+    def generate_nodes_from_positions(self,list_of_positions,node):
+        
+        nodes=[]
+        for positions in list_of_positions:
+            source_phrase=' '.join(node.source_phrase[positions[0]:positions[1]+1])
+            keys=self.l1_given_source.keys()
+            translations=[phrase_pair[1] for j, phrase_pair in enumerate(keys) if phrase_pair[0] == source_phrase] 
+            for local_translation in translations:
+                new_node=Node(local_translation,node,[positions[0],positions[1]])
+                new_node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1)
+                nodes.append(new_node)
+        return nodes
+    
     def calculate_translation(self):
         
         words=self.source_phrase.split()
@@ -125,14 +202,17 @@ class Graph:
         start_node.last_history=['<s>']
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
+        just_for_test=self.generate_next_nodes(start_node)
+        """
         for i in range(len(words)):
             word=words[i]
             keys=self.l1_given_source.keys()
             translations=[phrase_pair[1] for j, phrase_pair in enumerate(keys) if phrase_pair[0] == word] 
             for local_translation in translations:
                 node=Node(local_translation,start_node,[i,i])
-                node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1,local_translation)
+                node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1)
                 self.nodes.append(node)
+        """
         return self.destination_phrase
     
     def create_coverage_vector(self,number):
@@ -140,10 +220,33 @@ class Graph:
         for i in range(number):
             array.append(0)
         return array
+    
+    def calculate_translation_probability(self,position_to_translate,translation):
+        """
+        This method should be used only for calculating probabilities for future costs
+        """
+        
+        phrase_pair=(' '.join(self.source_phrase[position_to_translate[0]:position_to_translate[1]+1]),translation)
+        
+        grade= math.log10(self.l1_given_source[phrase_pair])
+        return grade
+    
+    def calculate_language_model_probability(self,history,translation):
+        """
+        This method should be used only for calculating probabilities for future costs
+        IMPORTANT NOTE: assumption that translation length<=3
+        """
+        translation_array=translation.split()
+        local_ngram=history[:]+translation_array
+        while (len(local_ngram)>3):
+            del local_ngram[0]
+        
+        result_backoff=calculate_stupid_backoff(local_ngram,self.language_model)
+        grade_language_model=math.log10(result_backoff)
+        return grade_language_model
 
 class Node:
     max_number_of_words=3 #max number of words in the history for language model
-    stupid_backoff_rate=0.4 #rate for stupid backoff
     previous_nodes=[]#links to thimport syse previous nodes
     last_history=[] #last n-1 words in history 
     already_translated=[]#  numbers of words which were translated- coverage vector
@@ -173,18 +276,18 @@ class Node:
         
     
 
-    def calculate_probability(self,language_model,l1_given_source,source_given_l1,translation):
+    def calculate_probability(self,language_model,l1_given_source,source_given_l1):
         phrase_pair=(' '.join(self.source_phrase[self.current_positions[0]:self.current_positions[1]+1]),self.current_position_translation)
         
         grade1= math.log10(l1_given_source[phrase_pair])
         grade2=math.log10(source_given_l1[phrase_pair])
         
-        translation_array=translation.split()
+        translation_array=self.current_position_translation.split()
         local_ngram=self.previous_node.last_history[:]+translation_array
         while (len(local_ngram)>3):
             del local_ngram[0]
         
-        result_backoff=self.calculate_stupid_backoff(local_ngram,language_model)
+        result_backoff=calculate_stupid_backoff(local_ngram,language_model)
         grade_language_model=math.log10(result_backoff)
         
         phrase_penalty=-1
@@ -198,26 +301,7 @@ class Node:
         self.probability=result+self.previous_node.probability;
         return result
     
-    def calculate_stupid_backoff(self,local_ngram_list,language_model):
-        
-        if len(local_ngram_list)<1:
-            return 0 # this should never happen
-        
-        local_ngram=tuple(local_ngram_list)
-        i=len(local_ngram_list)
-        if i==1:
-            local_ngram=(local_ngram_list[0],'','')
-        if i==2:
-            local_ngram=(local_ngram_list[0],local_ngram_list[1],'')
-        if i==3:
-            local_ngram=(local_ngram_list[0],local_ngram_list[1],local_ngram_list[2])
-            
-        if local_ngram in language_model:
-            return language_model[local_ngram]
-        else:
-            shorten_ngram=local_ngram_list[:]
-            del shorten_ngram[0]
-            return self.stupid_backoff_rate*self.calculate_stupid_backoff(shorten_ngram,language_model)
+
             
             
          
