@@ -1,23 +1,59 @@
 import sys
 import math
+import thread
 
 def translate(language,l1_given_source,source_given_l1,ngrams_prob,phrase_max_length):
     source_file = open(language, 'r')
     num_lines = number_of_lines(language)
     beam_width=5
-    translations=[]
+    number_of_threads=2
+    inputs={}
+    for j in range(number_of_threads):
+        inputs[j]=[]
+    step_size=num_lines/number_of_threads+1
     for i, oneLine in enumerate(source_file):
         if num_lines>100:
             if  i % (num_lines/100) is 0:
                 sys.stdout.write('\r%d%%' % (i*100/num_lines,))
                 sys.stdout.flush()
         sentences=oneLine.split('.')
-        for sentence in sentences:
+        if i/step_size in inputs:
+            inputs[i/step_size]=inputs[i/step_size]+sentences
+        else:
+            inputs[i/step_size]=sentences
+    translations={}
+    for j in inputs:
+        input_sentences=inputs[j]
+        #try:
+        #translate_part_of_text(input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations,j)
+            #thread.start_new_thread(test,(1))
+        thread.start_new_thread( translate_part_of_text, (input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations,j) )
+        #except:
+        #    print "Error: unable to start thread"
+    wait=1
+    while wait:
+        wait=0
+        for j in range(number_of_threads):
+            if not (j in translations.keys()):
+                wait=1
+    all_translations=[]
+    for j in translations:
+        all_translations=all_translations+translations[j]
+    save('translation',all_translations)       
+    return 0
+
+def test(nana):
+    a=1
+    return
+
+def translate_part_of_text(input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations_result,number):
+    translations=[]
+    for sentence in input_sentences:
             graph=Graph(sentence,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length)
             translation=graph.calculate_translation()
             translations.append(translation)
-    save('translation',translations)       
-    return 0
+    translations_result[number]=translations
+    return
 
 def save(file_name,translations):
     out = open(file_name, 'w')
