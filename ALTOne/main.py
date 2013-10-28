@@ -831,10 +831,12 @@ def main():
     max_length_of_phrase=3
     max_length_of_ngrams=3
     if input_name==None:
+        print 'Calculating translation models....'
         freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length_of_phrase)
         phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqsOld
         l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
                                   l1_phrase_freqs, l2_phrase_freqs)   
+        print 'Calculating language models....'
         ngrams_prob,ngrams_counts=calculate_language_model(language2,max_length_of_ngrams)
         ngrams_prob_f,ngrams_counts_f=calculate_language_model(language1,max_length_of_ngrams)
         
@@ -849,7 +851,7 @@ def main():
         ngrams_prob = pickle.load( open(  input_name+"ngrams_prob", "rb" ) )
         ngrams_prob_f = pickle.load( open(  input_name+"ngrams_prob_f", "rb" ) )
         
-    
+    print 'Decoding....'
     translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob,max_length_of_phrase)
 
     

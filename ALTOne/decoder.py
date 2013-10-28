@@ -22,10 +22,12 @@ def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f
         else:
             inputs[i/step_size]=sentences
     translations={}
+    progress=[]
     for j in inputs:
         input_sentences=inputs[j]
+        progress.append(0)
         #try:
-        translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j)
+        translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j,progress)
         #thread.start_new_thread( translate_part_of_text, (input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j) )
         #except:
         #    print "Error: unable to start thread"
@@ -45,9 +47,17 @@ def test(nana):
     a=1
     return
 
-def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number):
+def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number,progress):
     translations=[]
+    i=0
     for sentence in input_sentences:
+            i=i+1
+            if len(input_sentences)>100:
+                if  i % (len(input_sentences)/100) is 0:
+                    progress[number]=(i*100/len(input_sentences))
+                    min_val=min(progress)
+                    sys.stdout.write('\r%d%%' % (min_val,))
+                    sys.stdout.flush()
             if len(sentence)>=3:
                 graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
                 translation=graph.calculate_translation()
