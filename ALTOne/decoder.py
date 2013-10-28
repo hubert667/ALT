@@ -244,41 +244,44 @@ class Graph:
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
         self.node_stacks[0].append(start_node)
-        NODE_EXPANSION_LIMIT = 20
+        NODE_EXPANSION_LIMIT = 10
         for stack_num in xrange(len(self.node_stacks)):
+            print '-------------'
+            print len(self.node_stacks[stack_num])
             for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
                 if not n.collapsed:
                     self.collapse_node(n,stack_num)
                 if not n.stopped:
                     new_nodes = self.generate_next_nodes(n)
                     for i in new_nodes:
+                        print stack_num+i
                         if stack_num+i < len(self.node_stacks):
                             nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
                             self.add_nodes(nodes_to_add, stack_num+i)
-                            
-        best_node=self.node_stacks[len(self.node_stacks)-1][0]
-        
-        self.destination_phrase=self.generate_one_best_translation(best_node)
+
+        print len(self.node_stacks[stack_num])
+        self.destination_phrase=self.generate_one_best_translation(self.node_stacks[-1][0])
         return self.destination_phrase
+
     
     def add_nodes(self, nodes_to_add, stack_num):
-        STACK_LIMIT = 50
+        STACK_LIMIT = 20
         new_stack = []
         old_stack = self.node_stacks[stack_num]
         while old_stack or nodes_to_add:
+            if len(new_stack) > STACK_LIMIT:
+                self.node_stacks[stack_num] = new_stack
+                break
             if not old_stack or not nodes_to_add:
                 #one of the lists is empty
                 self.node_stacks[stack_num].extend(old_stack)
-                self.node_stacks.extend(nodes_to_add)
-                self.node_stacks = self.node_stacks[:STACK_LIMIT]
+                self.node_stacks[stack_num].extend(nodes_to_add)
+                self.node_stacks[stack_num] = self.node_stacks[stack_num][:STACK_LIMIT]
                 break
             if old_stack[0].probability > nodes_to_add[0].probability:
                 new_stack.append(old_stack.pop(0))
             else:
                 new_stack.append(nodes_to_add.pop(0))
-            if len(new_stack) > STACK_LIMIT:
-                self.node_stacks[stack_num] = new_stack
-                break
 
 
         """
