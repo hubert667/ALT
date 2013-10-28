@@ -6,16 +6,18 @@ def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f
     source_file = open(language, 'r')
     num_lines = number_of_lines(language)
     beam_width=5
-    number_of_threads=2
+    number_of_threads=1
     inputs={}
     for j in range(number_of_threads):
         inputs[j]=[]
     step_size=num_lines/number_of_threads+1
     for i, oneLine in enumerate(source_file):
+        """
         if num_lines>100:
             if  i % (num_lines/100) is 0:
                 sys.stdout.write('\r%d%%' % (i*100/num_lines,))
                 sys.stdout.flush()
+        """
         sentences=oneLine.split('.')
         if i/step_size in inputs:
             inputs[i/step_size]=inputs[i/step_size]+sentences
@@ -23,6 +25,7 @@ def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f
             inputs[i/step_size]=sentences
     translations={}
     progress=[]
+    print 'Decoding....'
     for j in inputs:
         input_sentences=inputs[j]
         progress.append(0)
@@ -50,14 +53,16 @@ def test(nana):
 def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number,progress):
     translations=[]
     i=0
+    step=100
     for sentence in input_sentences:
             i=i+1
-            if len(input_sentences)>100:
-                if  i % (len(input_sentences)/100) is 0:
-                    progress[number]=(i*100/len(input_sentences))
+            if len(input_sentences)>step:
+                if  i % (len(input_sentences)/step) is 0:
+                    progress[number]=(i*step/len(input_sentences))
                     min_val=min(progress)
                     sys.stdout.write('\r%d%%' % (min_val,))
                     sys.stdout.flush()
+            #sys.stdout.write(str(i)+"out of"+str(len(input_sentences)))
             if len(sentence)>=3:
                 graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
                 translation=graph.calculate_translation()
@@ -122,7 +127,7 @@ class Graph:
     source_given_l1={}
     max_phrase_length=3
     number_of_best_translations=10
-    disortion_limit=8
+    disortion_limit=5
     ngrams={}
     ngrams_f={}
     beam_width = 0
@@ -256,7 +261,7 @@ class Graph:
         self.node_stacks[0].append(start_node)
         NODE_EXPANSION_LIMIT = 10
         for stack_num in xrange(len(self.node_stacks)):
-            print len(self.node_stacks[stack_num])
+            #print len(self.node_stacks[stack_num])
             for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
                 if not n.collapsed:
                     self.collapse_node(n,stack_num)
@@ -267,7 +272,7 @@ class Graph:
                             nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
                             self.add_nodes(nodes_to_add, stack_num+i)
 
-        print len(self.node_stacks[stack_num])
+        #print len(self.node_stacks[stack_num])
         self.destination_phrase=self.generate_one_best_translation(self.node_stacks[-1][0])
         return self.destination_phrase
 
@@ -417,7 +422,10 @@ class Node:
         local_ngram = local_ngram[-3:] #this takes the last 3 elements
         
         result_backoff=calculate_stupid_backoff(local_ngram,language_model)
-        grade_language_model=math.log10(result_backoff)
+        grade_language_model=-100
+        if result_backoff!=0:
+            grade_language_model=math.log10(result_backoff)
+            
         
         phrase_penalty=-1
         

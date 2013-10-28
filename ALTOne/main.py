@@ -777,12 +777,15 @@ def main():
     
 
     
-    
     alignments="alignments"
     language1="language1"
     language2="language2"
     output_name="output"
-    
+    #alignments="clean.aligned"
+    #language1="clean.nl"
+    #language2="clean.en"
+    #output_name="clean.output"
+    #input_name="clean.output"
     
     
     
@@ -846,12 +849,13 @@ def main():
         pickle.dump( ngrams_prob, open( output_name+"ngrams_prob", "wb" ) )
         pickle.dump( ngrams_prob_f, open( output_name+"ngrams_prob_f", "wb" ) )
     else:
+        print 'Loading models....'
         l1_given_l2 = pickle.load( open(  input_name+"l1_given_l2", "rb" ) )
         l2_given_l1 = pickle.load( open(  input_name+"l2_given_l1", "rb" ) )
         ngrams_prob = pickle.load( open(  input_name+"ngrams_prob", "rb" ) )
         ngrams_prob_f = pickle.load( open(  input_name+"ngrams_prob_f", "rb" ) )
         
-    print 'Decoding....'
+    print 'Initializing....'
     translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob,max_length_of_phrase)
 
     
