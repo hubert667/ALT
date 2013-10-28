@@ -831,8 +831,9 @@ def main():
     l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
                               l1_phrase_freqs, l2_phrase_freqs)   
     ngrams_prob,ngrams_counts=calculate_language_model(language2,max_length_of_ngrams)
+    ngrams_prob_f,ngrams_counts_f=calculate_language_model(language1,max_length_of_ngrams)
     
-    translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,max_length_of_phrase)
+    translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob_f,max_length_of_phrase)
     
     
     save_language_model(ngrams_counts,language1+'_language_model_counts')

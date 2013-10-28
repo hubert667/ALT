@@ -2,7 +2,7 @@ import sys
 import math
 import thread
 
-def translate(language,l1_given_source,source_given_l1,ngrams_prob,phrase_max_length):
+def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f,phrase_max_length):
     source_file = open(language, 'r')
     num_lines = number_of_lines(language)
     beam_width=5
@@ -25,9 +25,8 @@ def translate(language,l1_given_source,source_given_l1,ngrams_prob,phrase_max_le
     for j in inputs:
         input_sentences=inputs[j]
         #try:
-        #translate_part_of_text(input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations,j)
-            #thread.start_new_thread(test,(1))
-        thread.start_new_thread( translate_part_of_text, (input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations,j) )
+        translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j)
+        #thread.start_new_thread( translate_part_of_text, (input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j) )
         #except:
         #    print "Error: unable to start thread"
     wait=1
@@ -46,10 +45,10 @@ def test(nana):
     a=1
     return
 
-def translate_part_of_text(input_sentences,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length,translations_result,number):
+def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number):
     translations=[]
     for sentence in input_sentences:
-            graph=Graph(sentence,beam_width,ngrams_prob,l1_given_source,source_given_l1,phrase_max_length)
+            graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
             translation=graph.calculate_translation()
             translations.append(translation)
     translations_result[number]=translations
@@ -112,42 +111,48 @@ class Graph:
     source_given_l1={}
     max_phrase_length=0
     ngrams={}
+    ngrams_f={}
     beam_width = 0
     nodes = []
     node_map = {} #maps indexes from nodes to their parents (sort of like pointers I guess?)
+    node_stacks = [] #a list of stacks of node_id's. If time left, could replace nodes
     equiv_nodes = {} #maps the best node to its equivalents
     expanded = True #This shows if the graph can still be expanded
     
 
-    def __init__(self, source_phrase, beam_width,language_model,l1_given_source,source_given_l1,max_phrase_length):
+    def __init__(self, source_phrase, beam_width,language_model,language_model_f,l1_given_source,source_given_l1,max_phrase_length):
         self.l1_given_source=l1_given_source
         self.source_given_l1=source_given_l1
         self.ngrams=language_model
+        self.ngrams_f=language_model_f
         self.max_phrase_length=max_phrase_length
         self.source_phrase = source_phrase
         self.beam_width = beam_width
+        sentence_len = len(source_phrase.split())
+        self.node_stacks = [[]]*sentence_len
 
     def expand_graph(self):
         '''
         This loops through nodes to expand/collapse them
         '''
-        self.expanded = False
-        for n_id in xrange(len(self.nodes)):
-            n = self.nodes[n_id]
-            if not n.collapsed:
-                self.collapse_node(n_id)
-                self.expanded = True
-            if not n.stopped:
-                self.expand_node(n_id)
-                self.expanded = True
+        #self.expanded = False
+        #for n_id in xrange(len(self.nodes)):
+        for stack in self.node_stacks:
+            for n in stack:
+                if not n.collapsed:
+                    self.collapse_node(n_id)
+                    #self.expanded = True
+                if not n.stopped:
+                    self.expand_node(n_id)
+                    #self.expanded = True
 
     def expand_node(self, node_id):
         '''
         This method creates new nodes from node
         '''
         
-        node = self.nodes[node_id]
-        list_of_next_nodes=self.generate_next_nodes(node)
+        #node = self.nodes[node_id]
+        #list_of_next_nodes=self.generate_next_nodes(node)
         """
         nodes from this list should be added to appropriate stacks, and some of them can be deleted
         if limit of the stacks is exceded
@@ -160,12 +165,13 @@ class Graph:
         This method finds nodes equivalent to node and makes pointers to them
         Don't know if this should be in here, or maybe at the graph level?
         '''
-        node1 = self.nodes[node_id]
-        for n_id in xrange(len(self.nodes)):
-            node2 = self.nodes[n_id]
-            #if NODES EQUIVALENT:
+        node1 = self.node_stacks[node_id[0]][node_id[1]]
+        for n2 in xrange(len(self.node_stacks[node_id[0]])):
+            n_id = (node_id[0], n2) 
+            node2 = self.nodes[n_id[0]][n_id[1]]
             if node1.already_translated == node2.already_translated and\
-                node1.current_position_translation == node2.current_position_translation:
+                node1.current_position_translation == node2.current_position_translation and\
+                node1.last_history == node2.last_history:
                 if node2 in self.equiv_nodes:
                     if node2.probability >= node1.probability:
                         self.equiv_nodes[n_id].append(node_id)
@@ -178,7 +184,6 @@ class Graph:
                         self.equiv_nodes[n_id] = [node_id]
                     else:
                         self.equiv_nodes[node_id] = [n_id]
-        return 0
     
     def generate_next_nodes(self,node):
         """
@@ -239,6 +244,14 @@ class Graph:
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
         just_for_test=self.generate_next_nodes(start_node)
+        
+        """
+        IMPORTANT NOTE:
+        you changed code in this method to "self.node_stacks[0].append(node)" but it is not valid because as you can see this method
+        was completely changed by me so please apply this in correct place
+        """
+        
+        
         """
         for i in range(len(words)):
             word=words[i]
@@ -257,6 +270,16 @@ class Graph:
             array.append(0)
         return array
     
+    def compute_future_cost(self,i,j):
+        source = self.source_phrase.split()[i:j+1]
+        if (j-i) =< self.max_phrase_length:
+            possible_phrase_pairs = [phrase_pair for phrase_pair in self.l1_given_source if phrase_pair[0] == source]
+            cost = self.l1_given_source[phrase_pair] + self.ngrams[phrase_pair[0]]
+            #ngrams = source lm?
+        if i is j:
+            return -10 + self.
+        return -10000
+    
     def calculate_translation_probability(self,position_to_translate,translation):
         """
         This method should be used only for calculating probabilities for future costs
@@ -267,7 +290,7 @@ class Graph:
         grade= math.log10(self.l1_given_source[phrase_pair])
         return grade
     
-    def calculate_language_model_probability(self,history,translation):
+    def calculate_language_model_probability(self,history,translation,language_model):
         """
         This method should be used only for calculating probabilities for future costs
         IMPORTANT NOTE: assumption that translation length<=3
@@ -277,7 +300,7 @@ class Graph:
         while (len(local_ngram)>3):
             del local_ngram[0]
         
-        result_backoff=calculate_stupid_backoff(local_ngram,self.language_model)
+        result_backoff=calculate_stupid_backoff(local_ngram,language_model)
         grade_language_model=math.log10(result_backoff)
         return grade_language_model
 
