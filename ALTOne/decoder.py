@@ -131,59 +131,30 @@ class Graph:
         sentence_len = len(source_phrase.split())
         self.node_stacks = [[]]*sentence_len
 
-    def expand_graph(self):
-        '''
-        This loops through nodes to expand/collapse them
-        '''
-        #self.expanded = False
-        #for n_id in xrange(len(self.nodes)):
-        for stack in self.node_stacks:
-            for n in stack:
-                if not n.collapsed:
-                    self.collapse_node(n_id)
-                    #self.expanded = True
-                if not n.stopped:
-                    self.expand_node(n_id)
-                    #self.expanded = True
-
-    def expand_node(self, node_id):
-        '''
-        This method creates new nodes from node
-        '''
-        
-        #node = self.nodes[node_id]
-        #list_of_next_nodes=self.generate_next_nodes(node)
-        """
-        nodes from this list should be added to appropriate stacks, and some of them can be deleted
-        if limit of the stacks is exceded
-        """
-        
-        return 0
-
-    def collapse_node(self, node_id):
+    def collapse_node(self, node, stack_num):
         '''
         This method finds nodes equivalent to node and makes pointers to them
         Don't know if this should be in here, or maybe at the graph level?
         '''
-        node1 = self.node_stacks[node_id[0]][node_id[1]]
+        #node1 = self.node_stacks[node_id[0]][node_id[1]]
         for n2 in xrange(len(self.node_stacks[node_id[0]])):
-            n_id = (node_id[0], n2) 
+            n_id = (stack_num, n2) 
             node2 = self.nodes[n_id[0]][n_id[1]]
-            if node1.already_translated == node2.already_translated and\
-                node1.current_position_translation == node2.current_position_translation and\
-                node1.last_history == node2.last_history:
+            if node.already_translated == node2.already_translated and\
+                node.current_position_translation == node2.current_position_translation and\
+                node.last_history == node2.last_history:
                 if node2 in self.equiv_nodes:
-                    if node2.probability >= node1.probability:
-                        self.equiv_nodes[n_id].append(node_id)
+                    if node2.probability >= node.probability:
+                        self.equiv_nodes[node2].append(node)
                     else:
-                        equivalents = self.equiv_nodes[n_id].append(n_id)
-                        self.equiv_nodes[node_id].append(equivalents)
-                        del self.equiv_nodes[n_id]
+                        equivalents = self.equiv_nodes[node2].append(node2)
+                        self.equiv_nodes[node].append(equivalents)
+                        del self.equiv_nodes[node2]
                 else:
-                    if node2.probability >= node1.probability:
-                        self.equiv_nodes[n_id] = [node_id]
+                    if node2.probability >= node.probability:
+                        self.equiv_nodes[node2] = [node]
                     else:
-                        self.equiv_nodes[node_id] = [n_id]
+                        self.equiv_nodes[node] = [node2]
     
     def generate_next_nodes(self,node):
         """
@@ -235,6 +206,14 @@ class Graph:
                 nodes.append(new_node)
         return nodes
     
+
+    def expand_graph(self):
+        '''
+        This loops through nodes to expand/collapse them
+        '''
+        #self.expanded = False
+        #for n_id in xrange(len(self.nodes)):
+
     def calculate_translation(self):
         
         words=self.source_phrase.split()
@@ -243,8 +222,32 @@ class Graph:
         start_node.last_history=['<s>']
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
-        just_for_test=self.generate_next_nodes(start_node)
-        
+        self.node_stacks[0].append(node)
+        NODE_EXPANSION_LIMIT = 20
+        for stack_num in xrange(len(self.node_stacks)):
+            for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
+                if not n.collapsed:
+                    self.collapse_node(n)
+                if not n.stopped:
+                    new_nodes = self.generate_next_nodes(n)
+                    for i in new_nodes:
+                        nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
+                        self.add_nodes(nodes_to_add, stack_num+i)
+    
+    def add_nodes(self, nodes_to_add, stack_num):
+        STACK_LIMIT = 50
+        new_stack = []
+        old_stack = self.node_stacks[stack_num]
+        while old_stack or nodes_to_add:
+            if old_stack[0].probability > nodes_to_add[0].probability:
+                new_stack.append(old_stack.pop(0))
+            else:
+                new_stack.append(nodes_to_add.pop(0))
+            if len(new_stack) > STACK_LIMIT:
+                self.node_stacks[stack_num] = new_stack
+                break
+
+
         """
         IMPORTANT NOTE:
         you changed code in this method to "self.node_stacks[0].append(node)" but it is not valid because as you can see this method
@@ -272,12 +275,20 @@ class Graph:
     
     def compute_future_cost(self,i,j):
         source = self.source_phrase.split()[i:j+1]
-        if (j-i) =< self.max_phrase_length:
+        if (j-i) <= self.max_phrase_length:
             possible_phrase_pairs = [phrase_pair for phrase_pair in self.l1_given_source if phrase_pair[0] == source]
-            cost = self.l1_given_source[phrase_pair] + self.ngrams[phrase_pair[0]]
-            #ngrams = source lm?
+            if len(possible_phrase_pairs):
+                max_cost = -10000
+                for phrase_pair in possible_phrase_pairs:
+                    cost = self.l1_given_source[phrase_pair] +\
+                    self.calculate_language_model_probability("", phrase_pair[0], self.ngrams)
+                    if cost > max_cost:
+                        max_cost = cost
+                return max_cost
+            else:
+                return -10000
         if i is j:
-            return -10 + self.
+            return -10
         return -10000
     
     def calculate_translation_probability(self,position_to_translate,translation):
@@ -297,8 +308,11 @@ class Graph:
         """
         translation_array=translation.split()
         local_ngram=history[:]+translation_array
+        '''
         while (len(local_ngram)>3):
             del local_ngram[0]
+        '''
+        local_ngram = local_ngram[-3:] #this takes the last 3 elements
         
         result_backoff=calculate_stupid_backoff(local_ngram,language_model)
         grade_language_model=math.log10(result_backoff)
@@ -343,8 +357,11 @@ class Node:
         
         translation_array=self.current_position_translation.split()
         local_ngram=self.previous_node.last_history[:]+translation_array
+        '''
         while (len(local_ngram)>3):
             del local_ngram[0]
+        '''
+        local_ngram = local_ngram[-3:] #this takes the last 3 elements
         
         result_backoff=calculate_stupid_backoff(local_ngram,language_model)
         grade_language_model=math.log10(result_backoff)
