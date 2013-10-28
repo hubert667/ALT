@@ -34,18 +34,21 @@ def  calculate_language_model(file_name, max_number_of_words):
         
         for ngram in ngrams:
             ngrams_counts[ngram] += 1
-            
+       
+    """     
     one_word_counter=0
     for ngram in ngrams_counts.elements(): 
         if ngram[1]=='':
             one_word_counter+=1
+    """
              
     for ngram in ngrams_counts.elements():
         if ngram[1]!='':
             shorter_ngram=(ngram[1],ngram[2],'')
             probability=(float)(ngrams_counts[ngram])/(float)(ngrams_counts[shorter_ngram])
         else:
-            probability=(float)(ngrams_counts[ngram])/one_word_counter
+            #probability=(float)(ngrams_counts[ngram])/one_word_counter
+            probability=1
         ngrams_probabilities[ngram]=(probability) 
     
     return ngrams_probabilities,ngrams_counts
