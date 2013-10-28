@@ -307,7 +307,7 @@ class Graph:
         current_node=best_node
         while current_node!=None:
             words.append(current_node.current_position_translation)
-            current_node=best_node.previous_node
+            current_node=current_node.previous_node
         words.reverse()
         translation=' '.join(words)
         return translation
