@@ -256,7 +256,6 @@ class Graph:
         self.node_stacks[0].append(start_node)
         NODE_EXPANSION_LIMIT = 10
         for stack_num in xrange(len(self.node_stacks)):
-            print '-------------'
             print len(self.node_stacks[stack_num])
             for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
                 if not n.collapsed:
@@ -264,7 +263,6 @@ class Graph:
                 if not n.stopped:
                     new_nodes = self.generate_next_nodes(n)
                     for i in new_nodes:
-                        print stack_num+i
                         if stack_num+i < len(self.node_stacks):
                             nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
                             self.add_nodes(nodes_to_add, stack_num+i)
