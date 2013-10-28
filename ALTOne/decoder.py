@@ -48,9 +48,10 @@ def test(nana):
 def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number):
     translations=[]
     for sentence in input_sentences:
-            graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
-            translation=graph.calculate_translation()
-            translations.append(translation)
+            if len(sentence)>=3:
+                graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
+                translation=graph.calculate_translation()
+                translations.append(translation)
     translations_result[number]=translations
     return
 
@@ -220,9 +221,10 @@ class Graph:
                 new_node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1)
                 list_of_translations.append(new_node)
             list_of_translations=sorted(list_of_translations, key=lambda test: test.probability)
-            list_of_translations[0:self.number_of_best_translations]
+            list_of_translations=list_of_translations[0:self.number_of_best_translations]
             local_nodes=nodes[length]
             local_nodes=local_nodes+list_of_translations
+            nodes[length]=local_nodes
         return nodes
     
 
@@ -253,6 +255,11 @@ class Graph:
                         if stack_num+i < len(self.node_stacks):
                             nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
                             self.add_nodes(nodes_to_add, stack_num+i)
+                            
+        best_node=self.node_stacks[len(self.node_stacks)-1][0]
+        
+        self.destination_phrase=self.generate_one_best_translation(best_node)
+        return self.destination_phrase
     
     def add_nodes(self, nodes_to_add, stack_num):
         STACK_LIMIT = 50
@@ -291,7 +298,6 @@ class Graph:
                 node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1)
                 self.nodes.append(node)
         """
-        return self.destination_phrase
     
     def generate_one_best_translation(self,best_node):
         words=[]
