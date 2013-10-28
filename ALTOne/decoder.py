@@ -139,7 +139,7 @@ class Graph:
         Don't know if this should be in here, or maybe at the graph level?
         '''
         #node1 = self.node_stacks[node_id[0]][node_id[1]]
-        for n2 in xrange(len(self.node_stacks[node_id[0]])):
+        for n2 in xrange(len(self.node_stacks[stack_num])):
             n_id = (stack_num, n2) 
             node2 = self.nodes[n_id[0]][n_id[1]]
             if node.already_translated == node2.already_translated and\
@@ -241,12 +241,12 @@ class Graph:
         start_node.last_history=['<s>']
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
-        self.node_stacks[0].append(node)
+        self.node_stacks[0].append(start_node)
         NODE_EXPANSION_LIMIT = 20
         for stack_num in xrange(len(self.node_stacks)):
             for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
                 if not n.collapsed:
-                    self.collapse_node(n)
+                    self.collapse_node(n,stack_num)
                 if not n.stopped:
                     new_nodes = self.generate_next_nodes(n)
                     for i in new_nodes:
