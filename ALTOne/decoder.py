@@ -135,7 +135,7 @@ class Graph:
     node_map = {} #maps indexes from nodes to their parents (sort of like pointers I guess?)
     node_stacks = [] #a list of stacks of node_id's. If time left, could replace nodes
     equiv_nodes = {} #maps the best node to its equivalents
-    expanded = True #This shows if the graph can still be expanded
+    future_costs = []
     
 
     def __init__(self, source_phrase, beam_width,language_model,language_model_f,l1_given_source,source_given_l1,max_phrase_length):
@@ -148,6 +148,7 @@ class Graph:
         self.beam_width = beam_width
         sentence_len = len(source_phrase.split())
         self.node_stacks = [[]]*(sentence_len+1)
+        self.future_costs = []
 
     def collapse_node(self, node, stack_num):
         '''
@@ -186,6 +187,7 @@ class Graph:
         within=0
         list_of_positions=[]
         j=0
+        node.cost = node.probability
         for i in range(len(coverage_vec)):
             j=i
             if i-first_not_translated<self.disortion_limit:
@@ -197,12 +199,14 @@ class Graph:
                 elif within==1 and coverage_vec[i]==1:
                     end=i-1
                     within=0
+                    node.cost+=self.future_costs[begin][end]
                     positions=self.generate_positions(begin,end)
                     list_of_positions=list_of_positions+positions
             else:
                 break
         if within==1:
             positions=self.generate_positions(begin,j)
+            node.cost+=self.future_costs[begin][j]
             list_of_positions=list_of_positions+positions
                        
         next_nodes=self.generate_nodes_from_positions(list_of_positions,node)
@@ -252,6 +256,7 @@ class Graph:
 
     def calculate_translation(self):
         
+        self.compute_future_cost()
         words=self.source_phrase.split()
         coverage_vector=self.create_coverage_vector(len(words))
         start_node=Node('',None,[0,0])
@@ -269,7 +274,7 @@ class Graph:
                     new_nodes = self.generate_next_nodes(n)
                     for i in new_nodes:
                         if stack_num+i < len(self.node_stacks):
-                            nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
+                            nodes_to_add = sorted(new_nodes[i],key=lambda node: node.cost)
                             self.add_nodes(nodes_to_add, stack_num+i)
 
         #print len(self.node_stacks[stack_num])
@@ -331,23 +336,29 @@ class Graph:
             array.append(0)
         return array
     
-    def compute_future_cost(self,i,j):
-        source = self.source_phrase.split()[i:j+1]
-        if (j-i) <= self.max_phrase_length:
-            possible_phrase_pairs = [phrase_pair for phrase_pair in self.l1_given_source if phrase_pair[0] == source]
-            if len(possible_phrase_pairs):
-                max_cost = -10000
-                for phrase_pair in possible_phrase_pairs:
-                    cost = self.l1_given_source[phrase_pair] +\
-                    self.calculate_language_model_probability("", phrase_pair[0], self.ngrams)
-                    if cost > max_cost:
-                        max_cost = cost
-                return max_cost
-            else:
-                return -10000
-        if i is j:
-            return -10
-        return -10000
+    def compute_future_cost(self):
+        source = self.source_phrase.split()
+        self.future_costs = []
+        for i in xrange(len(source)):
+            self.future_costs.append([])
+            for j in xrange(len(source)):
+                phrase = source[i:j+1]
+                if (j-i) <= self.max_phrase_length:
+                    possible_phrase_pairs = [phrase_pair for phrase_pair in\
+                            self.l1_given_source if phrase_pair[0] == phrase]
+                    if len(possible_phrase_pairs):
+                        max_cost = -10000
+                        for phrase_pair in possible_phrase_pairs:
+                            cost = self.l1_given_source[phrase_pair] +\
+                            self.calculate_language_model_probability("", phrase_pair[0], self.ngrams)
+                            if cost > max_cost:
+                                max_cost = cost
+                        self.future_costs[i].append(max_cost)
+                    else:
+                        self.future_costs[i].append(-10000)
+                if i is j:
+                    self.future_costs[i].append(-10)
+                self.future_costs[i].append(-10000)
     
     def calculate_translation_probability(self,position_to_translate,translation):
         """
@@ -387,6 +398,7 @@ class Node:
     probability=0
     stopped = False #this is to see if we should expand the node or not
     collapsed = False #difference with the prev one is that paths can go through this on the way back
+    cost = 0
 
     def __init__(self,_current_position_translation,_previous_node,_current_positions):
         
@@ -404,6 +416,7 @@ class Node:
        
         self.previous_node=_previous_node
         self.current_position_translation=_current_position_translation 
+        self.cost = 0
         
     
 
