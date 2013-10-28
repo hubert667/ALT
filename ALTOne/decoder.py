@@ -141,7 +141,7 @@ class Graph:
         #node1 = self.node_stacks[node_id[0]][node_id[1]]
         for n2 in xrange(len(self.node_stacks[stack_num])):
             n_id = (stack_num, n2) 
-            node2 = self.nodes[n_id[0]][n_id[1]]
+            node2 = self.node_stacks[n_id[0]][n_id[1]]
             if node.already_translated == node2.already_translated and\
                 node.current_position_translation == node2.current_position_translation and\
                 node.last_history == node2.last_history:
@@ -250,14 +250,21 @@ class Graph:
                 if not n.stopped:
                     new_nodes = self.generate_next_nodes(n)
                     for i in new_nodes:
-                        nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
-                        self.add_nodes(nodes_to_add, stack_num+i)
+                        if stack_num+i < len(self.node_stacks):
+                            nodes_to_add = sorted(new_nodes[i],key=lambda node: node.probability)
+                            self.add_nodes(nodes_to_add, stack_num+i)
     
     def add_nodes(self, nodes_to_add, stack_num):
         STACK_LIMIT = 50
         new_stack = []
         old_stack = self.node_stacks[stack_num]
         while old_stack or nodes_to_add:
+            if not old_stack or not nodes_to_add:
+                #one of the lists is empty
+                self.node_stacks[stack_num].extend(old_stack)
+                self.node_stacks.extend(nodes_to_add)
+                self.node_stacks = self.node_stacks[:STACK_LIMIT]
+                break
             if old_stack[0].probability > nodes_to_add[0].probability:
                 new_stack.append(old_stack.pop(0))
             else:
