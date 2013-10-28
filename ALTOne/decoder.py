@@ -109,7 +109,9 @@ class Graph:
     destination_phrase=''
     l1_given_source={}
     source_given_l1={}
-    max_phrase_length=0
+    max_phrase_length=3
+    number_of_best_translations=10
+    disortion_limit=8
     ngrams={}
     ngrams_f={}
     beam_width = 0
@@ -187,24 +189,33 @@ class Graph:
     
     def generate_next_nodes(self,node):
         """
-        Generates all possible nodes from given node
+        Generates all possible nodes from given node. 
+        Returns dictionary. Keys: 1,2 or 3 (length of source phrase). Values: lists of nodes
         """
         coverage_vec=node.already_translated
         begin=0
+        first_not_translated=-1
         end=0
         within=0
         list_of_positions=[]
+        j=0
         for i in range(len(coverage_vec)):
-            if within==0 and coverage_vec[i]==0:
-                begin=i
-                within =1
-            elif within==1 and coverage_vec[i]==1:
-                end=i-1
-                within=0
-                positions=self.generate_positions(begin,end)
-                list_of_positions=list_of_positions+positions
+            j=i
+            if i-first_not_translated<self.disortion_limit:
+                if within==0 and coverage_vec[i]==0:
+                    if first_not_translated==-1:
+                        first_not_translated=i
+                    begin=i
+                    within =1
+                elif within==1 and coverage_vec[i]==1:
+                    end=i-1
+                    within=0
+                    positions=self.generate_positions(begin,end)
+                    list_of_positions=list_of_positions+positions
+            else:
+                break
         if within==1:
-            positions=self.generate_positions(begin,len(coverage_vec)-1)
+            positions=self.generate_positions(begin,j)
             list_of_positions=list_of_positions+positions
                        
         next_nodes=self.generate_nodes_from_positions(list_of_positions,node)
@@ -224,15 +235,23 @@ class Graph:
     
     def generate_nodes_from_positions(self,list_of_positions,node):
         
-        nodes=[]
+        nodes={}
+        for i in range(self.max_phrase_length):
+            nodes[i+1]=[]
         for positions in list_of_positions:
+            length=positions[1]-positions[0]+1
             source_phrase=' '.join(node.source_phrase[positions[0]:positions[1]+1])
             keys=self.l1_given_source.keys()
             translations=[phrase_pair[1] for j, phrase_pair in enumerate(keys) if phrase_pair[0] == source_phrase] 
+            list_of_translations=[]
             for local_translation in translations:
                 new_node=Node(local_translation,node,[positions[0],positions[1]])
                 new_node.calculate_probability(self.ngrams, self.l1_given_source, self.source_given_l1)
-                nodes.append(new_node)
+                list_of_translations.append(new_node)
+            list_of_translations=sorted(list_of_translations, key=lambda test: test.probability)
+            list_of_translations[0:self.number_of_best_translations]
+            local_nodes=nodes[length]
+            local_nodes=local_nodes+list_of_translations
         return nodes
     
     def calculate_translation(self):
@@ -263,6 +282,16 @@ class Graph:
                 self.nodes.append(node)
         """
         return self.destination_phrase
+    
+    def generate_one_best_translation(self,best_node):
+        words=[]
+        current_node=best_node
+        while current_node!=None:
+            words.append(current_node.current_position_translation)
+            current_node=best_node.previous_node
+        words.reverse()
+        translation=' '.join(words)
+        return translation
     
     def create_coverage_vector(self,number):
         array=[]

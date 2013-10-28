@@ -9,6 +9,7 @@ from collections import Counter
 import sys
 from languageModel import *
 from decoder import *
+import pickle
 
 
 def reordering_probabilities(phrase_pair_reordering_freqs):
@@ -763,12 +764,15 @@ def main():
         help="File containing sentences of language 2")
     arg_parser.add_argument("-o", "--output",
         help="Output file")
+    arg_parser.add_argument("-load", "--name",
+        help="name of file where LM and TM are stored")
     
     args = arg_parser.parse_args()
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
     output_name=args.output;
+    input_name=args.name
     #max_length=3
     
 
@@ -826,18 +830,31 @@ def main():
     
     max_length_of_phrase=3
     max_length_of_ngrams=3
-    freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length_of_phrase)
-    phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqsOld
-    l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
-                              l1_phrase_freqs, l2_phrase_freqs)   
-    ngrams_prob,ngrams_counts=calculate_language_model(language2,max_length_of_ngrams)
-    ngrams_prob_f,ngrams_counts_f=calculate_language_model(language1,max_length_of_ngrams)
+    if input_name==None:
+        freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length_of_phrase)
+        phrase_pair_freqs, l1_phrase_freqs, l2_phrase_freqs,words_alignments,words_pair_freqs, l1_words_freqs, l2_words_freqs = freqsOld
+        l1_given_l2, l2_given_l1 = conditional_probabilities(phrase_pair_freqs, 
+                                  l1_phrase_freqs, l2_phrase_freqs)   
+        ngrams_prob,ngrams_counts=calculate_language_model(language2,max_length_of_ngrams)
+        ngrams_prob_f,ngrams_counts_f=calculate_language_model(language1,max_length_of_ngrams)
+        
+        
+        pickle.dump( l1_given_l2, open( output_name+"l1_given_l2", "wb" ) )
+        pickle.dump( l2_given_l1, open( output_name+"l2_given_l1", "wb" ) )
+        pickle.dump( ngrams_prob, open( output_name+"ngrams_prob", "wb" ) )
+        pickle.dump( ngrams_prob_f, open( output_name+"ngrams_prob_f", "wb" ) )
+    else:
+        l1_given_l2 = pickle.load( open(  input_name+"l1_given_l2", "rb" ) )
+        l2_given_l1 = pickle.load( open(  input_name+"l2_given_l1", "rb" ) )
+        ngrams_prob = pickle.load( open(  input_name+"ngrams_prob", "rb" ) )
+        ngrams_prob_f = pickle.load( open(  input_name+"ngrams_prob_f", "rb" ) )
+        
     
-    translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob_f,max_length_of_phrase)
+    translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob,max_length_of_phrase)
+
     
-    
-    save_language_model(ngrams_counts,language1+'_language_model_counts')
-    save_language_model(ngrams_prob,language1+'_language_model')
+    #save_language_model(ngrams_counts,language1+'_language_model_counts')
+    #save_language_model(ngrams_prob,language1+'_language_model')
     
 if __name__ == '__main__':
     main()
