@@ -132,7 +132,7 @@ class Graph:
         self.source_phrase = source_phrase
         self.beam_width = beam_width
         sentence_len = len(source_phrase.split())
-        self.node_stacks = [[]]*sentence_len
+        self.node_stacks = [[]]*(sentence_len+1)
 
     def collapse_node(self, node, stack_num):
         '''
