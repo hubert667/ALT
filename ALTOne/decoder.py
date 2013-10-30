@@ -1,74 +1,58 @@
 import sys
 import math
-import thread
+import threading
+import re
 
 def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f,phrase_max_length):
-    source_file = open(language, 'r')
-    num_lines = number_of_lines(language)
     beam_width=5
-    number_of_threads=1
-    inputs={}
-    for j in range(number_of_threads):
-        inputs[j]=[]
-    step_size=num_lines/number_of_threads+1
-    for i, oneLine in enumerate(source_file):
-        """
-        if num_lines>100:
-            if  i % (num_lines/100) is 0:
-                sys.stdout.write('\r%d%%' % (i*100/num_lines,))
-                sys.stdout.flush()
-        """
-        sentences=oneLine.split('.')
-        if i/step_size in inputs:
-            inputs[i/step_size]=inputs[i/step_size]+sentences
-        else:
-            inputs[i/step_size]=sentences
-    translations={}
-    progress=[]
-    print 'Decoding....'
-    for j in inputs:
-        input_sentences=inputs[j]
-        progress.append(0)
-        #try:
-        translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j,progress)
-        #thread.start_new_thread( translate_part_of_text, (input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations,j) )
-        #except:
-        #    print "Error: unable to start thread"
-    wait=1
-    while wait:
-        wait=0
-        for j in range(number_of_threads):
-            if not (j in translations.keys()):
-                wait=1
-    all_translations=[]
-    for j in translations:
-        all_translations=all_translations+translations[j]
-    save('translation',all_translations)       
-    return 0
+    source_file = open(language, 'r')
+    output_file_name = 'translation_output'
+    num_lines = number_of_lines(language)
+    number_of_threads=2
+    thread_list = []
+    step_size=num_lines/number_of_threads
 
-def test(nana):
-    a=1
-    return
+    print 'Creating seperate files for each thread'
+    for i in xrange(number_of_threads):
+        part_file = open('sentences%d'%i, 'w')
+        for j in xrange(step_size):
+            line = source_file.readline()
+            source_file_to_sentences(line, part_file)
+        #append whatever sentences are left to the last file
+        if i is number_of_threads-1:
+            line = True
+            while line:
+                line = source_file.readline()
+                source_file_to_sentences(line, part_file)
+        part_file.close()
 
-def translate_part_of_text(input_sentences,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length,translations_result,number,progress):
-    translations=[]
-    i=0
-    step=100
-    for sentence in input_sentences:
-            i=i+1
-            if len(input_sentences)>step:
-                if  i % (len(input_sentences)/step) is 0:
-                    progress[number]=(i*step/len(input_sentences))
-                    min_val=min(progress)
-                    sys.stdout.write('\r%d%%' % (min_val,))
-                    sys.stdout.flush()
-            #sys.stdout.write(str(i)+"out of"+str(len(input_sentences)))
-            if len(sentence)>=3:
-                graph=Graph(sentence,beam_width,ngrams_prob,ngrams_prob_f,l1_given_source,source_given_l1,phrase_max_length)
-                translation=graph.calculate_translation()
-                translations.append(translation)
-    translations_result[number]=translations
-    return
+    print 'Making a thread for each file to translate'
+    for i in xrange(number_of_threads):
+        input_file = 'sentences%d'%i
+        output_file = 'translations%d'%i
+        name = 'thread_%d'%i
+        thread = Decoder(i, name, input_file, output_file, beam_width,\
+                ngrams_prob, ngrams_prob_f, l1_given_source,\
+                source_given_l1,phrase_max_length)
+        thread.start()
+        thread_list.append(thread)
+
+    print 'Wait for all threads to complete'
+    for t in thread_list:
+        t.join()
+
+    output_file = open(output_file_name, 'w')
+    #append the files again
+    for t in thread_list:
+        part_file = open(t.output_file, 'r')
+        output_file.writelines(part_file)
+        output_file.write('\n')
+
+def source_file_to_sentences(line, part_file):
+    for sentence in re.split('[\.\?]',line):
+        sentence.strip()
+        if len(sentence):
+            part_file.write(sentence + '\n')
 
 def save(file_name,translations):
     out = open(file_name, 'w')
@@ -114,6 +98,51 @@ def calculate_stupid_backoff(local_ngram_list,language_model):
             del shorten_ngram[0]
             return stupid_backoff_rate*calculate_stupid_backoff(shorten_ngram,language_model)
 
+class Decoder (threading.Thread):
+
+    def __init__(self, threadID, name, input_file, output_file, beam_width,\
+            ngrams_prob, ngrams_prob_f, l1_given_source,\
+            source_given_l1,phrase_max_length):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.input_file = input_file
+        self.output_file = output_file
+        self.beam_width = beam_width
+        self.ngrams_prob = ngrams_prob
+        self.ngrams_prob_f = ngrams_prob_f
+        self.l1_given_source = l1_given_source
+        self.source_given_l1 = source_given_l1
+        self.phrase_max_length = phrase_max_length
+    
+    def run(self):
+        print "Starting " + self.name
+        self.translate_part_of_text()
+        print "Exiting " + self.name
+
+    def translate_part_of_text(self):       
+        self.input_sentences = open(self.input_file, 'r')
+        self.output = open(self.output_file, 'w')
+        i=0
+        step=100
+        for sentence in self.input_sentences:
+                i=i+1
+                '''
+                if len(self.input_sentences)>step:
+                    if  i % (len(self.input_sentences)/step) is 0:
+                        progress[number]=(i*step/len(input_sentences))
+                        min_val=min(progress)
+                        sys.stdout.write('\r%d%%' % (min_val,))
+                        sys.stdout.flush()
+                '''
+                #sys.stdout.write(str(i)+"out of"+str(len(input_sentences)))
+                if len(sentence.split())>=3:
+                    graph=Graph(sentence,self.beam_width,self.ngrams_prob,self.ngrams_prob_f,\
+                            self.l1_given_source,self.source_given_l1,self.phrase_max_length)
+                    translation=graph.calculate_translation()
+                    self.output.write(translation + '\n')
+        self.input_sentences.close()
+        self.output.close()
 
 class Graph:
     """
@@ -264,7 +293,7 @@ class Graph:
         start_node.source_phrase=self.source_phrase.split()
         start_node.already_translated=coverage_vector
         self.node_stacks[0].append(start_node)
-        NODE_EXPANSION_LIMIT = 10
+        NODE_EXPANSION_LIMIT = 40
         for stack_num in xrange(len(self.node_stacks)):
             #print len(self.node_stacks[stack_num])
             for n in self.node_stacks[stack_num][:NODE_EXPANSION_LIMIT]:
@@ -283,18 +312,18 @@ class Graph:
 
     
     def add_nodes(self, nodes_to_add, stack_num):
-        STACK_LIMIT = 20
+        STACK_LIMIT = 100
         new_stack = []
-        old_stack = self.node_stacks[stack_num]
+        old_stack = list(self.node_stacks[stack_num])
         while old_stack or nodes_to_add:
             if len(new_stack) > STACK_LIMIT:
                 self.node_stacks[stack_num] = new_stack
                 break
             if not old_stack or not nodes_to_add:
                 #one of the lists is empty
-                self.node_stacks[stack_num].extend(old_stack)
-                self.node_stacks[stack_num].extend(nodes_to_add)
-                self.node_stacks[stack_num] = self.node_stacks[stack_num][:STACK_LIMIT]
+                new_stack.extend(old_stack)
+                new_stack.extend(nodes_to_add)
+                self.node_stacks[stack_num] = new_stack[:STACK_LIMIT]
                 break
             if old_stack[0].probability > nodes_to_add[0].probability:
                 new_stack.append(old_stack.pop(0))
