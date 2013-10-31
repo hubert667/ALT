@@ -3,12 +3,11 @@ import math
 import threading
 import re
 
-def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f,phrase_max_length):
+def translate(language,l1_given_source,source_given_l1,ngrams_prob,ngrams_prob_f,phrase_max_length,number_of_threads=1):
     beam_width=5
     source_file = open(language, 'r')
     output_file_name = 'translation_output'
     num_lines = number_of_lines(language)
-    number_of_threads=2
     thread_list = []
     step_size=num_lines/number_of_threads
 

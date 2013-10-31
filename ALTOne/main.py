@@ -766,21 +766,33 @@ def main():
         help="Output file")
     arg_parser.add_argument("-load", "--name",
         help="name of file where LM and TM are stored")
+    arg_parser.add_argument("-tl1", "--test_language1",
+        help="File containing sentences of language 1 for decoding")
+    arg_parser.add_argument("-t", "--threads",
+        help="Amount of threads to create for the program")
     
     args = arg_parser.parse_args()
     alignments = args.alignments
     language1 = args.language1
     language2 = args.language2
-    output_name=args.output;
+    output_name=args.output
     input_name=args.name
+    test_language1 = args.test_language1
+    threads = int(args.threads)
+    print alignments
+    print language1
+    print language2
+    print output_name
+    print test_language1
+    print threads
     #max_length=3
     
 
     
-    alignments="alignments"
-    language1="language1"
-    language2="language2"
-    output_name="output"
+    #alignments="alignments"
+    #language1="language1"
+    #language2="language2"
+    #output_name="output"
     #alignments="clean.aligned"
     #language1="clean.nl"
     #language2="clean.en"
@@ -833,6 +845,7 @@ def main():
     
     max_length_of_phrase=3
     max_length_of_ngrams=3
+
     if input_name==None:
         print 'Calculating translation models....'
         freqsOld = extract_phrase_pair_freqs(alignments, language1, language2, max_length_of_phrase)
@@ -856,7 +869,7 @@ def main():
         ngrams_prob_f = pickle.load( open(  input_name+"ngrams_prob_f", "rb" ) )
         
     print 'Initializing....'
-    translate(language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob,max_length_of_phrase)
+    translate(test_language1,l1_given_l2,l2_given_l1,ngrams_prob,ngrams_prob,max_length_of_phrase,number_of_threads=threads)
 
     
     #save_language_model(ngrams_counts,language1+'_language_model_counts')
